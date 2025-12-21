@@ -3,10 +3,18 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Logging/LogMacros.h"
 #include "GameFramework/Character.h"
+
 #include "FishermanCharacter.generated.h"
 
-UCLASS()
+struct FInputActionValue;
+class UInputMappingContext;
+class UInputAction;
+
+DECLARE_LOG_CATEGORY_EXTERN(LogFishermanCharacter, Log, All);
+
+UCLASS(config = Game)
 class PROJETUNREAL2025_API AFishermanCharacter : public ACharacter
 {
 	GENERATED_BODY()
@@ -16,14 +24,31 @@ public:
 	AFishermanCharacter();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
-	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	virtual void NotifyControllerChanged() override;
+	void Look(const FInputActionValue& Value);
+	void Interact(const FInputActionValue& Value);
+	void Use(const FInputActionValue& Value);
 
+#pragma region Inputs
+
+	/** MappingContext */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputMappingContext* ControlsMappingContext;
+
+	/** Look Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* LookAction;
+
+	/** Interact Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* InteractAction;
+
+	/** Use Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* UseAction;
+
+#pragma endregion Inputs
 };
