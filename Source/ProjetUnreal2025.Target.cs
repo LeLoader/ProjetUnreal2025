@@ -9,7 +9,8 @@ public class ProjetUnreal2025Target : TargetRules
 	{
 		Type = TargetType.Game;
 		DefaultBuildSettings = BuildSettingsVersion.V5;
+        IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_5;
 
-		ExtraModuleNames.AddRange( new string[] { "ProjetUnreal2025" } );
+        ExtraModuleNames.AddRange( new string[] { "ProjetUnreal2025" } );
 	}
 }

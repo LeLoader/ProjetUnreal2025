@@ -5,14 +5,22 @@
 #include "CoreMinimal.h"
 #include "Logging/LogMacros.h"
 #include "GameFramework/Character.h"
+#include "Delegates/Delegate.h"
 
 #include "FishermanCharacter.generated.h"
 
 struct FInputActionValue;
 class UInputMappingContext;
 class UInputAction;
+class UInteractionComponent;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogFishermanCharacter, Log, All);
+
+#pragma region Delegates
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnNewInteractionTargetEvent, AActor*, NewInteractionTarget, AActor*, OldInteractionTarget);
+
+#pragma endregion Delegates
 
 UCLASS(config = Game)
 class PROJETUNREAL2025_API AFishermanCharacter : public ACharacter
@@ -20,7 +28,6 @@ class PROJETUNREAL2025_API AFishermanCharacter : public ACharacter
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
 	AFishermanCharacter();
 
 protected:
@@ -28,27 +35,58 @@ protected:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void NotifyControllerChanged() override;
+
+private:
 	void Look(const FInputActionValue& Value);
-	void Interact(const FInputActionValue& Value);
 	void Use(const FInputActionValue& Value);
+
+#pragma region Events
+
+public:
+	UPROPERTY(BlueprintAssignable)
+	FOnNewInteractionTargetEvent OnNewInteractionTarget;
+
+#pragma endregion Events
+
+#pragma region Components
+
+private:
+	// Components
+
+#pragma endregion Components
 
 #pragma region Inputs
 
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputMappingContext* ControlsMappingContext;
+	TObjectPtr<UInputMappingContext> ControlsMappingContext;
 
 	/** Look Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* LookAction;
+	TObjectPtr<UInputAction> LookAction;
 
 	/** Interact Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* InteractAction;
+	TObjectPtr<UInputAction> InteractAction;
 
 	/** Use Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* UseAction;
+	TObjectPtr<UInputAction> UseAction;
 
 #pragma endregion Inputs
+
+#pragma region Interactable
+
+	UFUNCTION()
+	void Interact(const FInputActionValue& Value);
+	void TraceToFindNearestInteractable();
+
+public:
+	UPROPERTY(BlueprintReadOnly)
+	TObjectPtr<AActor> CurrentInteractionTarget;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	float TraceLength;
+
+#pragma endregion Interactable
 };

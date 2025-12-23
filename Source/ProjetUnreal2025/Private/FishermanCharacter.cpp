@@ -7,37 +7,34 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "InputTriggers.h"
+#include <Interactable.h>
 
 DEFINE_LOG_CATEGORY(LogFishermanCharacter);
 
-// Sets default values
+#define ECC_Interactable ECC_GameTraceChannel2
+
 AFishermanCharacter::AFishermanCharacter()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
 }
 
-// Called when the game starts or when spawned
 void AFishermanCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 }
 
-// Called every frame
 void AFishermanCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	TraceToFindNearestInteractable();
 }
 
-// Called to bind functionality to input
 void AFishermanCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
 
 		// Looking
@@ -59,7 +56,6 @@ void AFishermanCharacter::NotifyControllerChanged()
 {
 	Super::NotifyControllerChanged();
 
-	// Add Input Mapping Context
 	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
@@ -71,31 +67,63 @@ void AFishermanCharacter::NotifyControllerChanged()
 
 void AFishermanCharacter::Look(const FInputActionValue& Value)
 {
-	// input is a Vector2D
-	//	FVector2D LookAxisVector = Value.Get<FVector2D>();
-	//	AController* Controller = GetController();
-	//	if (IsValid(Controller)) {
-	//	}
+	const FVector2D LookAxisValue = Value.Get<FVector2D>();
+
+	if (IsValid(Controller))
+	{
+		AddControllerYawInput(LookAxisValue.X);
+		AddControllerPitchInput(LookAxisValue.Y);
+	}
 }
 
 void AFishermanCharacter::Interact(const FInputActionValue& Value)
 {
-	//	FHitResult Hit;
-	//	FVector TraceStart = GetActorLocation();
-	//	FVector TraceEnd = GetActorLocation() + GetActorForwardVector() * 1000.0f;
-	//	FCollisionQueryParams QueryParams;
-	//	QueryParams.AddIgnoredActor(this);
-	//	
-	//	GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_WorldStatic, QueryParams);
-	//	
-	//	if (Hit.bBlockingHit) {
-	//		if (IInteractable* Interactable = Cast<IInteractable>(Hit.GetActor())) {
-	//			Interactable->Interact(this);
-	//		}
-	//	}
+	Cast<IInteractable>(CurrentInteractionTarget)->Interact(Cast<AFishermanCharacter>(GetOwner()));
 }
 
 void AFishermanCharacter::Use(const FInputActionValue& Value)
 {
 
+}
+
+void AFishermanCharacter::TraceToFindNearestInteractable()
+{
+	FHitResult Hit;
+	TArray<FHitResult> Hits;
+	FVector StartLocation = GetOwner()->GetActorLocation();
+	FVector EndLocation = StartLocation + GetOwner()->GetActorForwardVector() * TraceLength;
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(GetOwner());
+	// Sphere sweep
+	// GetWorld()->SweepMultiByChannel(Hits, StartLocation, EndLocation, FQuat::Identity, ECC_Interactable, FCollisionShape::MakeSphere(TraceWidth), Params);
+	// GetWorld()->LineTraceMultiByChannel(Hits, StartLocation, EndLocation, ECC_Interactable, Params);
+	GetWorld()->LineTraceSingleByChannel(Hit, StartLocation, EndLocation, ECC_Interactable, Params);
+	if (Hit.bBlockingHit) {
+		// Remplacer pour single 
+	}
+
+	if (Hits.Num() != 0)
+	{
+		AActor* PrioritaryInteractableActor = Hits[0].GetActor();
+		for (FHitResult Hit : Hits)
+		{
+			if (IInteractable* Interactable = Cast<IInteractable>(Hit.GetActor())) {
+				if (Cast<IInteractable>(PrioritaryInteractableActor)->GetPriority() < Interactable->GetPriority()) {
+					PrioritaryInteractableActor = Hit.GetActor();
+				}
+			}
+		}
+
+		if (CurrentInteractionTarget != PrioritaryInteractableActor) {
+			OnNewInteractionTarget.Broadcast(PrioritaryInteractableActor, CurrentInteractionTarget);
+		}
+		CurrentInteractionTarget = PrioritaryInteractableActor;
+	}
+	else
+	{
+		if (IsValid(CurrentInteractionTarget)) {
+			OnNewInteractionTarget.Broadcast(nullptr, CurrentInteractionTarget);
+		}
+		CurrentInteractionTarget = nullptr;
+	}
 }
