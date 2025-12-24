@@ -3,36 +3,81 @@
 
 #include "Lever.h"
 
+#include "FishermanCharacter.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
+#include "Logging/StructuredLog.h"
 
 // Sets default values
 ALever::ALever()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
+	if (!IsValid(InputComponent)) {
+		InputComponent = CreateDefaultSubobject<UEnhancedInputComponent>(TEXT("EnhancedInputComponent"));
+	}
 }
 
 // Called when the game starts or when spawned
 void ALever::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(InputComponent)) {
+
+		EnhancedInputComponent->BindAction(MoveLeverAction, ETriggerEvent::Triggered, this, &ALever::MoveLever);
+	}
 }
 
-// Called every frame
 void ALever::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 }
 
-bool ALever::Interact(AFishermanCharacter* Instigator)
+bool ALever::Interact(AFishermanCharacter* InteractionSource)
 {
-	throw std::logic_error("The method or operation is not implemented.");
+	if (APlayerController* PlayerController = Cast<APlayerController>(InteractionSource->Controller))
+	{
+		if (!InputComponent) {
+			return false;
+		}
+
+		PlayerController->PushInputComponent(InputComponent);
+
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			Subsystem->AddMappingContext(LeverMappingContext, 1);
+			return true;
+		}
+	}
+	return false;
 }
 
-int ALever::GetPriority()
+bool ALever::StopInteract(AFishermanCharacter* InteractionSource)
 {
-	throw std::logic_error("The method or operation is not implemented.");
+	if (APlayerController* PlayerController = Cast<APlayerController>(InteractionSource->Controller))
+	{
+		if (!InputComponent) 
+		{ 
+			return false;
+		}
+
+		PlayerController->PopInputComponent(InputComponent);
+
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			FModifyContextOptions Options;
+			Options.bIgnoreAllPressedKeysUntilRelease = true;
+			Options.bForceImmediately = false;
+			Subsystem->RemoveMappingContext(LeverMappingContext, Options);
+			return true;
+		}
+	}
+	return false;
 }
 
+void ALever::MoveLever(const FInputActionValue& Value)
+{
+	UE_LOGFMT(LogFishermanCharacter, Display, "Move Lever {0}", Value.Get<float>());
+}

@@ -3,8 +3,17 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Interactable.h"
 #include "GameFramework/Actor.h"
+
+
 #include "Lever.generated.h"
+
+class AFishermanCharacter;
+class UInputMappingContext;
+class UInputComponent;
+class UInputAction;
+struct FInputActionValue;
 
 UCLASS()
 class PROJETUNREAL2025_API ALever : public AActor, public IInteractable
@@ -12,23 +21,37 @@ class PROJETUNREAL2025_API ALever : public AActor, public IInteractable
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
 	ALever();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+#pragma region Inputs
+
+private:
+	/** MappingContext */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInputMappingContext> LeverMappingContext;
+
+	/** Move Lever Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInputAction> MoveLeverAction;
+
+	/** Move Lever Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInputAction> StopInteractAction;
+
+#pragma endregion Inputs
 	
-	
+#pragma region Interaction Implementation
+
 public:
-	bool Interact(AFishermanCharacter* Instigator) override;
+	bool Interact(AFishermanCharacter* InteractionSource) override;
+	bool StopInteract(AFishermanCharacter* InteractionSource) override;
 
+#pragma endregion Interaction Implementation
 
-	int GetPriority() override;
-
+private:
+	void MoveLever(const FInputActionValue& Value);
 };

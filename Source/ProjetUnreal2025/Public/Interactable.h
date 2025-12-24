@@ -26,7 +26,10 @@ class PROJETUNREAL2025_API IInteractable
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	UFUNCTION(BlueprintCallable)
-	virtual bool Interact(AFishermanCharacter* Instigator) = 0;
+	virtual bool Interact(AFishermanCharacter* InteractionSource) = 0;
+
+	UFUNCTION(BlueprintCallable)
+	virtual bool StopInteract(AFishermanCharacter* InteractionSource) = 0;
 
 	// UFUNCTION(BlueprintCallable)
 	// virtual int GetPriority() = 0;

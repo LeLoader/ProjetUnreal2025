@@ -38,7 +38,9 @@ protected:
 
 private:
 	void Look(const FInputActionValue& Value);
+	void Move(const FInputActionValue& Value);
 	void Use(const FInputActionValue& Value);
+	void MoveLever(const FInputActionValue& Value);
 
 #pragma region Events
 
@@ -65,6 +67,10 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> LookAction;
 
+	/** Move Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInputAction> MoveAction;
+
 	/** Interact Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> InteractAction;
@@ -72,6 +78,10 @@ private:
 	/** Use Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> UseAction;
+
+	/** Move Lever Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInputAction> MoveLeverAction;
 
 #pragma endregion Inputs
 
@@ -82,11 +92,19 @@ private:
 	void TraceToFindNearestInteractable();
 
 public:
+	void StopInteract();
+
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<AActor> CurrentInteractionTarget;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	float TraceLength;
 
+	bool bIsInteracting;
+
 #pragma endregion Interactable
+
+private:
+	void AddDefaultMappingContext();
+	void RemoveDefaultMappingContext();
 };
