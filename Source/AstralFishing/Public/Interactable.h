@@ -29,7 +29,7 @@ public:
 	virtual bool Interact(AFishermanCharacter* InteractionSource) = 0;
 
 	UFUNCTION(BlueprintCallable)
-	virtual bool StopInteract(AFishermanCharacter* InteractionSource) = 0;
+	virtual bool StopInteract(AActor* InteractionSource) = 0;
 
 	// UFUNCTION(BlueprintCallable)
 	// virtual int GetPriority() = 0;
