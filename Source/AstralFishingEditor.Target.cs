@@ -3,14 +3,14 @@
 using UnrealBuildTool;
 using System.Collections.Generic;
 
-public class ProjetUnreal2025EditorTarget : TargetRules
+public class AstralFishingEditorTarget : TargetRules
 {
-	public ProjetUnreal2025EditorTarget(TargetInfo Target) : base(Target)
+	public AstralFishingEditorTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V5;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_5; 
 
-		ExtraModuleNames.AddRange( new string[] { "ProjetUnreal2025" } );
+		ExtraModuleNames.AddRange( new string[] { "AstralFishing" } );
 	}
 }

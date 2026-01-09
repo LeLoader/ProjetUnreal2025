@@ -2,9 +2,9 @@
 
 using UnrealBuildTool;
 
-public class ProjetUnreal2025 : ModuleRules
+public class AstralFishing : ModuleRules
 {
-	public ProjetUnreal2025(ReadOnlyTargetRules Target) : base(Target)
+	public AstralFishing(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
@@ -14,12 +14,12 @@ public class ProjetUnreal2025 : ModuleRules
 
         PrivateIncludePaths.AddRange(new string[]
        {
-            "ProjetUnreal2025/Private/",
+            "AstralFishing/Private/",
        });
 
         PublicIncludePaths.AddRange(new string[]
         {
-           "ProjetUnreal2025/Public/",
+           "AstralFishing/Public/",
         });
 
         // Uncomment if you are using Slate UI

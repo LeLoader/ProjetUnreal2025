@@ -16,7 +16,7 @@ class UInputAction;
 struct FInputActionValue;
 
 UCLASS()
-class PROJETUNREAL2025_API ALever : public AActor, public IInteractable
+class ASTRALFISHING_API ALever : public AActor, public IInteractable
 {
 	GENERATED_BODY()
 	

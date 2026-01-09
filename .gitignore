@@ -55,9 +55,9 @@ Plugins/**/Binaries/*
 # Don't ignore DLL
 !Binaries/Win64
 Binaries/Win64/*
-!Binaries/Win64/ProjetUnreal2025Editor.target
+!Binaries/Win64/AstralFishingEditor.target
 !Binaries/Win64/UnrealEditor.modules
-!Binaries/Win64/UnrealEditor-ProjetUnreal2025.dll
+!Binaries/Win64/UnrealEditor-AstralFishing.dll
 
 # Builds
 Build/*

@@ -19,7 +19,7 @@ class UInteractable : public UInterface
 /**
  * 
  */
-class PROJETUNREAL2025_API IInteractable
+class ASTRALFISHING_API IInteractable
 {
 	GENERATED_BODY()
 

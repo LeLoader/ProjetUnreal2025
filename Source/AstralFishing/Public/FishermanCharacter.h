@@ -23,7 +23,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnNewInteractionTargetEvent, AActo
 #pragma endregion Delegates
 
 UCLASS(config = Game)
-class PROJETUNREAL2025_API AFishermanCharacter : public ACharacter
+class ASTRALFISHING_API AFishermanCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
