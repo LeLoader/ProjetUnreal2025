@@ -50,10 +50,10 @@ public:
 #pragma region Components
 
 private:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UStaticMeshComponent> LeverBase;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UStaticMeshComponent> Lever;
 
 #pragma endregion Components
@@ -86,6 +86,12 @@ public:
 public:
 	UPROPERTY(EditAnywhere, meta = (Units = "deg", UIMin = 10, UIMax = 90, ClampMin = 10, ClampMax = 90))
 	float MaxAngle = 60;
+
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<USoundBase> ClickSound;
+
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<USoundBase> StopSound;
 
 private:
 	UPROPERTY()

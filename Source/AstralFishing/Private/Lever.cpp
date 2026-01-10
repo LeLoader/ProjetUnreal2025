@@ -24,9 +24,9 @@ ALever::ALever()
 	Lever = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Lever"));
 	Lever->SetupAttachment(RootComponent);
 
-	FRotator Rot = Lever->GetRelativeRotation();
-	Rot.Roll = 0;
-	Lever->SetRelativeRotation(Rot);
+	FRotator BaseRotation = Lever->GetRelativeRotation();
+	BaseRotation.Roll = 0;
+	Lever->SetRelativeRotation(BaseRotation);
 	CurrentDirection = ELeverDirection::MIDDLE;
 }
 
@@ -74,6 +74,8 @@ bool ALever::StopInteract(AActor* InteractionSource)
 		FishermanCharacter->StopInteract();
 		PlayerController->PopInputComponent(InputComponent);
 
+		// Needed if we want the lever to snap back in place
+		/* 
 		switch (CurrentDirection) {
 		case ELeverDirection::MIDDLE:
 			Lever->SetRelativeRotation(FRotator(Lever->GetRelativeRotation().Pitch, Lever->GetRelativeRotation().Yaw, 0));
@@ -85,6 +87,7 @@ bool ALever::StopInteract(AActor* InteractionSource)
 			Lever->SetRelativeRotation(FRotator(Lever->GetRelativeRotation().Pitch, Lever->GetRelativeRotation().Yaw, MaxAngle));
 			break;
 		}
+		*/
 
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer())) {
 			FModifyContextOptions Options;
@@ -104,25 +107,40 @@ void ALever::SetLeverDirection(ELeverDirection NewDirection)
 	ELeverDirection OldDirection = CurrentDirection;
 	CurrentDirection = NewDirection;
 	OnLeverDirectionChanged.Broadcast(NewDirection, OldDirection);
+
+	switch (NewDirection) {
+	case ELeverDirection::MIDDLE:
+		if (IsValid(StopSound)) {
+			UGameplayStatics::PlaySoundAtLocation(GetWorld(), StopSound, GetActorLocation());
+		}
+		break;
+	case ELeverDirection::LEFT:
+	case ELeverDirection::RIGHT:
+		if (IsValid(ClickSound)) {
+			UGameplayStatics::PlaySoundAtLocation(GetWorld(), ClickSound, GetActorLocation());
+		}
+		break;
+	}
 }
 
 void ALever::MoveLever(const FInputActionValue& Value)
 {
 	float FloatValue = Value.Get<float>();
-	UE_LOGFMT(LogFishermanCharacter, Display, "Move Lever {0}", FloatValue);
-
 	FRotator CurrentRotation = Lever->GetRelativeRotation();
 	CurrentRotation.Add(0, 0, FloatValue);
 	CurrentRotation.Roll = FMath::Clamp(CurrentRotation.Roll, -MaxAngle, MaxAngle);
-	if (CurrentRotation.Roll == -MaxAngle) {
+
+	float ThirdOfMaxAngleRange = MaxAngle * 2 / 3;
+
+	if (CurrentRotation.Roll <= -MaxAngle + ThirdOfMaxAngleRange) {
 		SetLeverDirection(ELeverDirection::LEFT);
-		StopInteract(this);
+		// StopInteract(this);
 	}
-	else if (CurrentRotation.Roll == MaxAngle) {
+	else if (CurrentRotation.Roll >= MaxAngle - ThirdOfMaxAngleRange) {
 		SetLeverDirection(ELeverDirection::RIGHT);
-		StopInteract(this);
+		// StopInteract(this);
 	}
-	else if (CurrentDirection == ELeverDirection::LEFT && CurrentRotation.Roll >= 0 || CurrentDirection == ELeverDirection::RIGHT && CurrentRotation.Roll <= 0) {
+	else if (CurrentRotation.Roll >= -MaxAngle + ThirdOfMaxAngleRange && CurrentRotation.Roll <= MaxAngle - ThirdOfMaxAngleRange) {
 		SetLeverDirection(ELeverDirection::MIDDLE);
 	}
 
