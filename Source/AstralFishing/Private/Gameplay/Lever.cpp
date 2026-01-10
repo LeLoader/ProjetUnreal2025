@@ -1,9 +1,9 @@
 
 
 
-#include "Lever.h"
+#include "Gameplay/Lever.h"
 
-#include "FishermanCharacter.h"
+#include "Global/FishermanCharacter.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Logging/StructuredLog.h"

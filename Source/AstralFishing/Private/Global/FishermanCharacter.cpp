@@ -1,13 +1,13 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "FishermanCharacter.h"
+#include "Global/FishermanCharacter.h"
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "InputTriggers.h"
-#include <Interactable.h>
+#include "Interface/Interactable.h"
 
 DEFINE_LOG_CATEGORY(LogFishermanCharacter);
 

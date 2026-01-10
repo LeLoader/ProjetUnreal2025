@@ -29,10 +29,10 @@ class ASTRALFISHING_API AFishermanCharacter : public ACharacter
 
 public:
 	AFishermanCharacter();
+	virtual void Tick(float DeltaTime) override;
 
 protected:
 	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void NotifyControllerChanged() override;
 
