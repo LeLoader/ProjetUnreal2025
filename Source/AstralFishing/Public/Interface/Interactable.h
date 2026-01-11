@@ -29,7 +29,7 @@ public:
 	virtual bool Interact(UInteractionComponent* InteractionSource) = 0;
 
 	UFUNCTION(BlueprintCallable)
-	virtual bool StopInteract(UInteractionComponent* InteractionSource) = 0;
+	virtual bool StopInteract(UInteractionComponent* InteractionSource);
 
 	UFUNCTION(BlueprintCallable)
 	virtual void Hover(UInteractionComponent* InteractionSource) = 0;
