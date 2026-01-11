@@ -35,6 +35,7 @@ class ASTRALFISHING_API ALever : public AActor, public IInteractable
 	
 public:	
 	ALever();
+	virtual void Tick(float DeltaTime) override;
 
 protected:
 	virtual void BeginPlay() override;
@@ -95,10 +96,19 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<USoundBase> StopSound;
 
+	UPROPERTY(EditAnywhere)
+	float SnapSpeed = 1.f;
+
+	UPROPERTY(EditAnywhere, meta = (Units = "Multiplier", UIMin = 0.01, UIMax = 1, ClampMin = 0.01, ClampMax = 1))
+	float LeverSensitivity = 0.02f;
+
 private:
 	UPROPERTY()
 	ELeverDirection CurrentDirection;
 
 	void SetLeverDirection(ELeverDirection NewDirection);
 	void MoveLever(const FInputActionValue& Value);
+
+	float DirectionValue;
+	FRotator WantedRotation;
 };

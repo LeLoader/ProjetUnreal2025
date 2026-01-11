@@ -13,7 +13,7 @@
 // Sets default values
 ALever::ALever()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 
 	if (!IsValid(InputComponent)) {
 		InputComponent = CreateDefaultSubobject<UEnhancedInputComponent>(TEXT("EnhancedInputComponent"));
@@ -28,10 +28,10 @@ ALever::ALever()
 	FRotator BaseRotation = Lever->GetRelativeRotation();
 	BaseRotation.Roll = 0;
 	Lever->SetRelativeRotation(BaseRotation);
+	WantedRotation = BaseRotation;
 	CurrentDirection = ELeverDirection::MIDDLE;
 }
 
-// Called when the game starts or when spawned
 void ALever::BeginPlay()
 {
 	Super::BeginPlay();
@@ -40,6 +40,11 @@ void ALever::BeginPlay()
 	{
 		EnhancedInputComponent->BindAction(MoveLeverAction, ETriggerEvent::Triggered, this, &ALever::MoveLever);
 	}
+}
+
+void ALever::Tick(float DeltaTime)
+{
+	Lever->SetRelativeRotation(FMath::RInterpTo(Lever->GetRelativeRotation(), WantedRotation, DeltaTime, SnapSpeed));
 }
 
 bool ALever::Interact(UInteractionComponent* InteractionSource)
@@ -74,20 +79,17 @@ bool ALever::StopInteract(UInteractionComponent* InteractionSource)
 
 		PlayerController->PopInputComponent(InputComponent);
 
-		// Needed if we want the lever to snap back in place
-		/* 
 		switch (CurrentDirection) {
 		case ELeverDirection::MIDDLE:
-			Lever->SetRelativeRotation(FRotator(Lever->GetRelativeRotation().Pitch, Lever->GetRelativeRotation().Yaw, 0));
+			DirectionValue = 0;
 			break;
 		case ELeverDirection::LEFT:
-			Lever->SetRelativeRotation(FRotator(Lever->GetRelativeRotation().Pitch, Lever->GetRelativeRotation().Yaw, -MaxAngle));
+			DirectionValue = -1;
 			break;
 		case ELeverDirection::RIGHT:
-			Lever->SetRelativeRotation(FRotator(Lever->GetRelativeRotation().Pitch, Lever->GetRelativeRotation().Yaw, MaxAngle));
+			DirectionValue = 1;
 			break;
 		}
-		*/
 
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer())) {
 			FModifyContextOptions Options;
@@ -136,23 +138,18 @@ void ALever::SetLeverDirection(ELeverDirection NewDirection)
 void ALever::MoveLever(const FInputActionValue& Value)
 {
 	float FloatValue = Value.Get<float>();
-	FRotator CurrentRotation = Lever->GetRelativeRotation();
-	CurrentRotation.Add(0, 0, FloatValue);
-	CurrentRotation.Roll = FMath::Clamp(CurrentRotation.Roll, -MaxAngle, MaxAngle);
+	DirectionValue = FMath::Clamp(DirectionValue + FloatValue * LeverSensitivity, -1, 1);
 
-	float ThirdOfMaxAngleRange = MaxAngle * 2 / 3;
-
-	if (CurrentRotation.Roll <= -MaxAngle + ThirdOfMaxAngleRange) {
+	if (DirectionValue <= -1) {
 		SetLeverDirection(ELeverDirection::LEFT);
-		// StopInteract(this);
+		WantedRotation.Roll = -MaxAngle;
 	}
-	else if (CurrentRotation.Roll >= MaxAngle - ThirdOfMaxAngleRange) {
+	else if (DirectionValue >= 1) {
 		SetLeverDirection(ELeverDirection::RIGHT);
-		// StopInteract(this);
+		WantedRotation.Roll = MaxAngle;
 	}
-	else if (CurrentRotation.Roll >= -MaxAngle + ThirdOfMaxAngleRange && CurrentRotation.Roll <= MaxAngle - ThirdOfMaxAngleRange) {
+	else if ((DirectionValue >= 0 && CurrentDirection == ELeverDirection::LEFT) ||  (DirectionValue <= 0 && CurrentDirection == ELeverDirection::RIGHT)) {
 		SetLeverDirection(ELeverDirection::MIDDLE);
+		WantedRotation.Roll = 0;
 	}
-
-	Lever->SetRelativeRotation(CurrentRotation);
 }
