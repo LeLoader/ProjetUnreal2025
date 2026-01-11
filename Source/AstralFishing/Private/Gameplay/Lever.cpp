@@ -19,15 +19,15 @@ ALever::ALever()
 		InputComponent = CreateDefaultSubobject<UEnhancedInputComponent>(TEXT("EnhancedInputComponent"));
 	}
 
-	LeverBase = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("LeverBase"));
-	RootComponent = LeverBase;
+	LeverBaseMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SM LeverBase"));
+	RootComponent = LeverBaseMesh;
 
-	Lever = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Lever"));
-	Lever->SetupAttachment(RootComponent);
+	LeverMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SM Lever"));
+	LeverMesh->SetupAttachment(RootComponent);
 
-	FRotator BaseRotation = Lever->GetRelativeRotation();
+	FRotator BaseRotation = LeverMesh->GetRelativeRotation();
 	BaseRotation.Roll = 0;
-	Lever->SetRelativeRotation(BaseRotation);
+	LeverMesh->SetRelativeRotation(BaseRotation);
 	WantedRotation = BaseRotation;
 	CurrentDirection = ELeverDirection::MIDDLE;
 }
@@ -44,7 +44,7 @@ void ALever::BeginPlay()
 
 void ALever::Tick(float DeltaTime)
 {
-	Lever->SetRelativeRotation(FMath::RInterpTo(Lever->GetRelativeRotation(), WantedRotation, DeltaTime, SnapSpeed));
+	LeverMesh->SetRelativeRotation(FMath::RInterpTo(LeverMesh->GetRelativeRotation(), WantedRotation, DeltaTime, SnapSpeed));
 }
 
 bool ALever::Interact(UInteractionComponent* InteractionSource)
@@ -101,16 +101,6 @@ bool ALever::StopInteract(UInteractionComponent* InteractionSource)
 		}
 	}
 	return false;
-}
-
-void ALever::Hover(UInteractionComponent* InteractionSource) {
-	Lever->SetRenderCustomDepth(true);
-	LeverBase->SetRenderCustomDepth(true);
-}
-
-void ALever::StopHover(UInteractionComponent* InteractionSource) {
-	Lever->SetRenderCustomDepth(false);
-	LeverBase->SetRenderCustomDepth(false);
 }
 
 void ALever::SetLeverDirection(ELeverDirection NewDirection)

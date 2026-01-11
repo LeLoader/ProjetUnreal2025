@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Interface/Interactable.h"
-#include "GameFramework/Actor.h"
+#include "Gameplay/InteractableBase.h"
 #include "Delegates/Delegate.h"
 
 #include "Lever.generated.h"
@@ -29,7 +29,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnLeverDirectionChangedEvent, ELev
 #pragma endregion Delegates
 
 UCLASS(Blueprintable)
-class ASTRALFISHING_API ALever : public AActor, public IInteractable
+class ASTRALFISHING_API ALever : public AInteractableBase
 {
 	GENERATED_BODY()
 	
@@ -52,10 +52,10 @@ public:
 
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UStaticMeshComponent> LeverBase;
+	TObjectPtr<UStaticMeshComponent> LeverBaseMesh;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UStaticMeshComponent> Lever;
+	TObjectPtr<UStaticMeshComponent> LeverMesh;
 
 #pragma endregion Components
 
@@ -81,8 +81,6 @@ private:
 public:
 	bool Interact(UInteractionComponent* InteractionSource) override;
 	bool StopInteract(UInteractionComponent* InteractionSource) override;
-	void Hover(UInteractionComponent* InteractionSource) override;
-	void StopHover(UInteractionComponent* InteractionSource) override;
 
 #pragma endregion Interaction Implementation
 
