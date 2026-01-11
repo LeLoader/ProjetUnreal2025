@@ -78,8 +78,10 @@ private:
 #pragma region Interaction Implementation
 
 public:
-	bool Interact(AFishermanCharacter* InteractionSource) override;
-	bool StopInteract(AActor* InteractionSource) override;
+	bool Interact(UInteractionComponent* InteractionSource) override;
+	bool StopInteract(UInteractionComponent* InteractionSource) override;
+	void Hover(UInteractionComponent* InteractionSource) override;
+	void StopHover(UInteractionComponent* InteractionSource) override;
 
 #pragma endregion Interaction Implementation
 

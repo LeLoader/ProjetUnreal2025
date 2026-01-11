@@ -17,10 +17,10 @@ class UInteractionComponent;
 DECLARE_LOG_CATEGORY_EXTERN(LogFishermanCharacter, Log, All);
 
 #pragma region Delegates
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnNewInteractionTargetEvent, AActor*, NewInteractionTarget, AActor*, OldInteractionTarget);
-
-#pragma endregion Delegates
+ 
+	// Delegates
+ 
+ #pragma endregion Delegates
 
 UCLASS(config = Game)
 class ASTRALFISHING_API AFishermanCharacter : public ACharacter
@@ -40,20 +40,18 @@ private:
 	void Look(const FInputActionValue& Value);
 	void Move(const FInputActionValue& Value);
 	void Use(const FInputActionValue& Value);
-	void MoveLever(const FInputActionValue& Value);
 
 #pragma region Events
 
-public:
-	UPROPERTY(BlueprintAssignable)
-	FOnNewInteractionTargetEvent OnNewInteractionTarget;
+	// Events
 
 #pragma endregion Events
 
 #pragma region Components
 
 private:
-	// Components
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInteractionComponent> InteractionComponent;
 
 #pragma endregion Components
 
@@ -79,28 +77,12 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> UseAction;
 
-	/** Move Lever Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UInputAction> MoveLeverAction;
-
 #pragma endregion Inputs
 
 #pragma region Interactable
 
 	UFUNCTION()
 	void Interact(const FInputActionValue& Value);
-	void TraceToFindNearestInteractable();
-
-public:
-	void StopInteract();
-
-	UPROPERTY(BlueprintReadOnly)
-	TObjectPtr<AActor> CurrentInteractionTarget;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	float TraceLength;
-
-	bool bIsInteracting;
 
 #pragma endregion Interactable
 

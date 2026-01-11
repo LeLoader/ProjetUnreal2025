@@ -8,6 +8,7 @@
 #include "InputActionValue.h"
 #include "InputTriggers.h"
 #include "Interface/Interactable.h"
+#include "Component/InteractionComponent.h"
 
 DEFINE_LOG_CATEGORY(LogFishermanCharacter);
 
@@ -15,20 +16,22 @@ DEFINE_LOG_CATEGORY(LogFishermanCharacter);
 
 AFishermanCharacter::AFishermanCharacter()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
+
+	InteractionComponent = CreateDefaultSubobject<UInteractionComponent>(TEXT("InteractionComponent"));
 }
 
 void AFishermanCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	InteractionComponent->Owner = this;
 }
 
 void AFishermanCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	TraceToFindNearestInteractable();
 }
 
 void AFishermanCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -97,91 +100,34 @@ void AFishermanCharacter::Move(const FInputActionValue& Value)
 
 void AFishermanCharacter::Interact(const FInputActionValue& Value)
 {
-	if (IInteractable* InteractableObject = Cast<IInteractable>(CurrentInteractionTarget)) {
-		if (bIsInteracting) {
-			if (InteractableObject->StopInteract(this)) {
-				AddDefaultMappingContext();
-				bIsInteracting = false;
-			}
+	if (InteractionComponent->TryInteract()) {
+		if (InteractionComponent->bIsInteracting) {
+			RemoveDefaultMappingContext();
 		}
 		else {
-			if (InteractableObject->Interact(this)) {
-				RemoveDefaultMappingContext();
-				bIsInteracting = true;
-			}
+			AddDefaultMappingContext();
 		}
 	}
-}
 
-void AFishermanCharacter::StopInteract()
-{
-	AddDefaultMappingContext();
+// 	if (IInteractable* InteractableObject = Cast<IInteractable>(CurrentInteractionTarget)) {
+// 		if (bIsInteracting) {
+// 			if (InteractableObject->StopInteract(this)) {
+// 				AddDefaultMappingContext();
+// 				bIsInteracting = false;
+// 			}
+// 		}
+// 		else {
+// 			if (InteractableObject->Interact(this)) {
+// 				RemoveDefaultMappingContext();
+// 				bIsInteracting = true;
+// 			}
+// 		}
+// 	}
 }
 
 void AFishermanCharacter::Use(const FInputActionValue& Value)
 {
 
-}
-
-void AFishermanCharacter::TraceToFindNearestInteractable()
-{
-	if (!Controller) {
-		return;
-	}
-
-	if (bIsInteracting) {
-		return;
-	}
-
-	FHitResult Hit;
-	TArray<FHitResult> Hits;
-	FVector StartLocation = Cast<APlayerController>(Controller)->PlayerCameraManager->GetCameraLocation();
-	FVector EndLocation = StartLocation + GetBaseAimRotation().Vector() * TraceLength;
-	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(this);
-
-	// Multi logic
-	// GetWorld()->SweepMultiByChannel(Hits, StartLocation, EndLocation, FQuat::Identity, ECC_Interactable, FCollisionShape::MakeSphere(TraceWidth), Params);
-	// GetWorld()->LineTraceMultiByChannel(Hits, StartLocation, EndLocation, ECC_Interactable, Params);
-	// 	if (Hits.Num() != 0)
-	// 	{
-	// 		AActor* PrioritaryInteractableActor = Hits[0].GetActor();
-	// 		for (FHitResult Hit : Hits)
-	// 		{
-	// 			if (IInteractable* Interactable = Cast<IInteractable>(Hit.GetActor())) {
-	// 				if (Cast<IInteractable>(PrioritaryInteractableActor)->GetPriority() < Interactable->GetPriority()) {
-	// 					PrioritaryInteractableActor = Hit.GetActor();
-	// 				}
-	// 			}
-	// 		}
-	// 
-	// 		if (CurrentInteractionTarget != PrioritaryInteractableActor) {
-	// 			OnNewInteractionTarget.Broadcast(PrioritaryInteractableActor, CurrentInteractionTarget);
-	// 		}
-	// 		CurrentInteractionTarget = PrioritaryInteractableActor;
-	// 	}
-	// 	else
-	// 	{
-	// 		if (IsValid(CurrentInteractionTarget)) {
-	// 			OnNewInteractionTarget.Broadcast(nullptr, CurrentInteractionTarget);
-	// 		}
-	// 		CurrentInteractionTarget = nullptr;
-	// 	}
-
-	GetWorld()->LineTraceSingleByChannel(Hit, StartLocation, EndLocation, ECC_Interactable, Params);
-	if (Hit.bBlockingHit && IsValid(Hit.GetActor())) {
-		AActor* NewInteractionTarget = Hit.GetActor();
-		if (CurrentInteractionTarget != NewInteractionTarget) {
-			OnNewInteractionTarget.Broadcast(NewInteractionTarget, CurrentInteractionTarget);
-			CurrentInteractionTarget = NewInteractionTarget;
-		}
-	}
-	else {
-		if (CurrentInteractionTarget != nullptr) {
-			OnNewInteractionTarget.Broadcast(nullptr, CurrentInteractionTarget);
-			CurrentInteractionTarget = nullptr;
-		}
-	}
 }
 
 void AFishermanCharacter::AddDefaultMappingContext()

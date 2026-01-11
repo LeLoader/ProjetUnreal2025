@@ -8,6 +8,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "Logging/StructuredLog.h"
 #include <Kismet/GameplayStatics.h>
+#include "Component/InteractionComponent.h"
 
 // Sets default values
 ALever::ALever()
@@ -41,9 +42,9 @@ void ALever::BeginPlay()
 	}
 }
 
-bool ALever::Interact(AFishermanCharacter* InteractionSource)
+bool ALever::Interact(UInteractionComponent* InteractionSource)
 {
-	if (APlayerController* PlayerController = Cast<APlayerController>(InteractionSource->Controller))
+	if (APlayerController* PlayerController = Cast<APlayerController>(InteractionSource->Owner->Controller))
 	{
 		if (!InputComponent) {
 			return false;
@@ -59,9 +60,9 @@ bool ALever::Interact(AFishermanCharacter* InteractionSource)
 	return false;
 }
 
-bool ALever::StopInteract(AActor* InteractionSource)
+bool ALever::StopInteract(UInteractionComponent* InteractionSource)
 {
-	AFishermanCharacter* FishermanCharacter = Cast<AFishermanCharacter>(InteractionSource);
+	AFishermanCharacter* FishermanCharacter = Cast<AFishermanCharacter>(InteractionSource->Owner);
 	if (!IsValid(FishermanCharacter)) {
 		FishermanCharacter = Cast<AFishermanCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 	}
@@ -71,7 +72,6 @@ bool ALever::StopInteract(AActor* InteractionSource)
 			return false;
 		}
 
-		FishermanCharacter->StopInteract();
 		PlayerController->PopInputComponent(InputComponent);
 
 		// Needed if we want the lever to snap back in place
@@ -99,6 +99,16 @@ bool ALever::StopInteract(AActor* InteractionSource)
 		}
 	}
 	return false;
+}
+
+void ALever::Hover(UInteractionComponent* InteractionSource) {
+	Lever->SetRenderCustomDepth(true);
+	LeverBase->SetRenderCustomDepth(true);
+}
+
+void ALever::StopHover(UInteractionComponent* InteractionSource) {
+	Lever->SetRenderCustomDepth(false);
+	LeverBase->SetRenderCustomDepth(false);
 }
 
 void ALever::SetLeverDirection(ELeverDirection NewDirection)
