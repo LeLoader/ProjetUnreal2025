@@ -11,12 +11,13 @@ ARadio::ARadio()
 	PrimaryActorTick.bCanEverTick = false;
 	bIsToggleInteraction = false;
 
-	RadioMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SM Radio"));
-	RootComponent = RadioMesh;
-	ToOutline.Add(RadioMesh);
+	RadioMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SM Radio"));
+	RadioMeshComponent->SetCollisionProfileName(InteractableProfileStatic);
+	RootComponent = RadioMeshComponent;
+	ToOutline.Add(RadioMeshComponent);
 
 	AudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("MusicComponent"));
-	AudioComponent->SetupAttachment(RadioMesh);
+	AudioComponent->SetupAttachment(RadioMeshComponent);
 }
 
 void ARadio::BeginPlay()

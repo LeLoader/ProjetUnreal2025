@@ -26,7 +26,7 @@ protected:
 
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UStaticMeshComponent> RadioMesh;
+	TObjectPtr<UStaticMeshComponent> RadioMeshComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UAudioComponent> AudioComponent;

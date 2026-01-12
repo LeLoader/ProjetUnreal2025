@@ -52,10 +52,10 @@ public:
 
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UStaticMeshComponent> LeverBaseMesh;
+	TObjectPtr<UStaticMeshComponent> LeverBaseMeshComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UStaticMeshComponent> LeverMesh;
+	TObjectPtr<UStaticMeshComponent> LeverMeshComponent;
 
 #pragma endregion Components
 

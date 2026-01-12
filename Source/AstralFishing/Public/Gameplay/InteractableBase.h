@@ -9,6 +9,9 @@
 
 #include "InteractableBase.generated.h"
 
+#define InteractableProfileStatic FName("Interactable")
+#define InteractableProfileDynamic FName("InteractableDynamic")
+
 UCLASS()
 class ASTRALFISHING_API AInteractableBase : public AActor, public IInteractable
 {

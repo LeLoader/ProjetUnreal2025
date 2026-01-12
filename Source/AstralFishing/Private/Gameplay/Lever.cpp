@@ -19,17 +19,19 @@ ALever::ALever()
 		InputComponent = CreateDefaultSubobject<UEnhancedInputComponent>(TEXT("EnhancedInputComponent"));
 	}
 
-	LeverBaseMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SM LeverBase"));
-	RootComponent = LeverBaseMesh;
-	ToOutline.Add(LeverBaseMesh);
+	LeverBaseMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SM LeverBase"));
+	RootComponent = LeverBaseMeshComponent;
+	LeverBaseMeshComponent->SetCollisionProfileName(InteractableProfileStatic);
+	ToOutline.Add(LeverBaseMeshComponent);
 
-	LeverMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SM Lever"));
-	LeverMesh->SetupAttachment(RootComponent);
-	ToOutline.Add(LeverMesh);
+	LeverMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SM Lever"));
+	LeverMeshComponent->SetupAttachment(RootComponent);
+	LeverMeshComponent->SetCollisionProfileName(InteractableProfileDynamic);
+	ToOutline.Add(LeverMeshComponent);
 
-	FRotator BaseRotation = LeverMesh->GetRelativeRotation();
+	FRotator BaseRotation = LeverMeshComponent->GetRelativeRotation();
 	BaseRotation.Roll = 0;
-	LeverMesh->SetRelativeRotation(BaseRotation);
+	LeverMeshComponent->SetRelativeRotation(BaseRotation);
 	WantedRotation = BaseRotation;
 	CurrentDirection = ELeverDirection::MIDDLE;
 }
@@ -46,7 +48,7 @@ void ALever::BeginPlay()
 
 void ALever::Tick(float DeltaTime)
 {
-	LeverMesh->SetRelativeRotation(FMath::RInterpTo(LeverMesh->GetRelativeRotation(), WantedRotation, DeltaTime, SnapSpeed));
+	LeverMeshComponent->SetRelativeRotation(FMath::RInterpTo(LeverMeshComponent->GetRelativeRotation(), WantedRotation, DeltaTime, SnapSpeed));
 }
 
 FInteractionResult ALever::Interact(UInteractionComponent* InteractionSource)

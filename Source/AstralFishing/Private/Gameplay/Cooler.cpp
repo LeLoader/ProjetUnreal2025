@@ -6,26 +6,49 @@
 #include "Components/Widget.h"
 #include "GameFramework/Character.h"
 #include "Blueprint/UserWidget.h"
+#include "UnrealClient.h"
 
 // Sets default values
 ACooler::ACooler()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	bIsToggleInteraction = true;
+
+	CoolerBodyMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SM Cooler Body"));
+	RootComponent = CoolerBodyMeshComponent;
+	CoolerBodyMeshComponent->SetCollisionProfileName(InteractableProfileStatic);
+	ToOutline.Add(CoolerBodyMeshComponent);
+
+	CoolerLidMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SM Cooler Lid"));
+	CoolerLidMeshComponent->SetupAttachment(CoolerBodyMeshComponent);
+	CoolerLidMeshComponent->SetCollisionProfileName(InteractableProfileDynamic);
+	ToOutline.Add(CoolerLidMeshComponent);
 }
 
-// Called when the game starts or when spawned
 void ACooler::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	if (WidgetClass != nullptr) {
+		Widget = CreateWidget(GetWorld(), WidgetClass, TEXT("WidgetCooler"));
+	}
+}
+
+void ACooler::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
 }
 
 FInteractionResult ACooler::Interact(UInteractionComponent* InteractionSource)
 {
-	if (WidgetClass != nullptr) {
-		Widget = CreateWidget(GetWorld(), WidgetClass, TEXT("Widget"));
+	if (!Widget) return FInteractionResult(false, bIsToggleInteraction);
+
+	if (APlayerController* PlayerController = Cast<APlayerController>(InteractionSource->Owner->Controller)) {
+		PlayerController->SetShowMouseCursor(true);
+		FIntPoint ViewportSize = GEditor->GetActiveViewport()->GetSizeXY();
+		PlayerController->SetMouseLocation(ViewportSize.X / 2, ViewportSize.Y / 2); // Assumed this is the center
+
 		Widget->AddToViewport();
 		return FInteractionResult(true, bIsToggleInteraction);
 	}
@@ -34,16 +57,13 @@ FInteractionResult ACooler::Interact(UInteractionComponent* InteractionSource)
 
 bool ACooler::StopInteract(UInteractionComponent* InteractionSource)
 {
-	Widget->RemoveFromParent();
-	Widget = nullptr;
-	return true;
+	if (!Widget) return false;
+
+	if (APlayerController* PlayerController = Cast<APlayerController>(InteractionSource->Owner->Controller)) {
+		PlayerController->SetShowMouseCursor(false);
+
+		Widget->RemoveFromParent();
+		return true;
+	}
+	return false;
 }
-
-// Called every frame
-void ACooler::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-
-

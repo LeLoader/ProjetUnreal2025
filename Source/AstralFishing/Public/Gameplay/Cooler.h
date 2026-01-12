@@ -19,6 +19,18 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+#pragma region Components
+
+private:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UStaticMeshComponent> CoolerBodyMeshComponent;
+
+	private:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UStaticMeshComponent> CoolerLidMeshComponent;
+
+#pragma endregion Components
+
 #pragma region Interaction Implementation
 
 public:
