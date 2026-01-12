@@ -17,7 +17,7 @@ class ASTRALFISHING_API AInteractableBase : public AActor, public IInteractable
 
 public:
 
-	virtual bool Interact(UInteractionComponent* InteractionSource) override;
+	virtual FInteractionResult Interact(UInteractionComponent* InteractionSource) override;
 	void Hover(UInteractionComponent* InteractionSource) override;
 	void StopHover(UInteractionComponent* InteractionSource) override;
 
@@ -27,4 +27,7 @@ public:
 public:
 	UPROPERTY(EditAnywhere, Category = "Outline")
 	TArray<UPrimitiveComponent*> ToOutline;
+
+protected:
+	bool bIsToggleInteraction;
 };

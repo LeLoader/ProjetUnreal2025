@@ -102,10 +102,10 @@ void AFishermanCharacter::Interact(const FInputActionValue& Value)
 {
 	if (InteractionComponent->TryInteract()) {
 		if (InteractionComponent->bIsInteracting) {
-			RemoveDefaultMappingContext();
+			// RemoveDefaultMappingContext();
 		}
 		else {
-			AddDefaultMappingContext();
+			// AddDefaultMappingContext();
 		}
 	}
 

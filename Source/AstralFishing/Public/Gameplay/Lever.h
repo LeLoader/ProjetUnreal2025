@@ -79,7 +79,7 @@ private:
 #pragma region Interaction Implementation
 
 public:
-	bool Interact(UInteractionComponent* InteractionSource) override;
+	FInteractionResult Interact(UInteractionComponent* InteractionSource) override;
 	bool StopInteract(UInteractionComponent* InteractionSource) override;
 
 #pragma endregion Interaction Implementation

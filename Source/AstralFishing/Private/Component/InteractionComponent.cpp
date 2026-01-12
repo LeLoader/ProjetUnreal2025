@@ -107,9 +107,15 @@ bool UInteractionComponent::TryInteract()
 		return false;
 	}
 	else {
-		if (CurrentInteractionTarget && CurrentInteractionTarget->Interact(this)) {
-			bIsInteracting = true;
-			return true;
+		if (CurrentInteractionTarget) {
+			FInteractionResult Result = CurrentInteractionTarget->Interact(this);
+			if (Result.bHasSuccess) {
+				if (Result.bIsToggleInteraction) {
+					bIsInteracting = true;
+				}
+				return true;
+			}
+			return false;
 		}
 		return false;
 	}

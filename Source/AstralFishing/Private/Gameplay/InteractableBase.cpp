@@ -3,14 +3,15 @@
 
 #include "Gameplay/InteractableBase.h"
 
-bool AInteractableBase::Interact(UInteractionComponent* InteractionSource)
+FInteractionResult AInteractableBase::Interact(UInteractionComponent* InteractionSource)
 {
-	return true;
+	return FInteractionResult(true, bIsToggleInteraction);
 }
 
 void AInteractableBase::Hover(UInteractionComponent* InteractionSource)
 {
 	for (UPrimitiveComponent* Comp : ToOutline) {
+		Comp->CustomDepthStencilValue = 1;
 		Comp->SetRenderCustomDepth(true);
 	}
 }

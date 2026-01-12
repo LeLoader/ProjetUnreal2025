@@ -9,6 +9,17 @@
 
 class UInteractionComponent;
 
+USTRUCT(BlueprintType)
+struct FInteractionResult {
+
+	GENERATED_BODY()
+
+	bool bHasSuccess = false;
+	bool bIsToggleInteraction = false;
+
+};
+
+
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI, NotBlueprintable)
 class UInteractable : public UInterface
@@ -26,7 +37,7 @@ class ASTRALFISHING_API IInteractable
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	UFUNCTION(BlueprintCallable)
-	virtual bool Interact(UInteractionComponent* InteractionSource) = 0;
+	virtual FInteractionResult Interact(UInteractionComponent* InteractionSource) = 0;
 
 	UFUNCTION(BlueprintCallable)
 	virtual bool StopInteract(UInteractionComponent* InteractionSource);

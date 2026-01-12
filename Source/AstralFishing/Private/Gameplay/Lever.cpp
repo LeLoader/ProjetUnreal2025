@@ -14,6 +14,7 @@
 ALever::ALever()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	bIsToggleInteraction = true;
 
 	if (!IsValid(InputComponent)) {
 		InputComponent = CreateDefaultSubobject<UEnhancedInputComponent>(TEXT("EnhancedInputComponent"));
@@ -49,22 +50,22 @@ void ALever::Tick(float DeltaTime)
 	LeverMesh->SetRelativeRotation(FMath::RInterpTo(LeverMesh->GetRelativeRotation(), WantedRotation, DeltaTime, SnapSpeed));
 }
 
-bool ALever::Interact(UInteractionComponent* InteractionSource)
+FInteractionResult ALever::Interact(UInteractionComponent* InteractionSource)
 {
 	if (APlayerController* PlayerController = Cast<APlayerController>(InteractionSource->Owner->Controller))
 	{
 		if (!InputComponent) {
-			return false;
+			return FInteractionResult(false, bIsToggleInteraction);
 		}
 
 		PlayerController->PushInputComponent(InputComponent);
 
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer())) {
 			Subsystem->AddMappingContext(LeverMappingContext, 1);
-			return true;
+			return FInteractionResult(true, bIsToggleInteraction);
 		}
 	}
-	return false;
+	return FInteractionResult(false, bIsToggleInteraction);
 }
 
 bool ALever::StopInteract(UInteractionComponent* InteractionSource)
