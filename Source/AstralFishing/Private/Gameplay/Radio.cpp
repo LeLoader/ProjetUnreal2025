@@ -23,13 +23,15 @@ void ARadio::BeginPlay()
 {
 	Super::BeginPlay();
 
-	AudioComponent->SetSound(Music);
-	AudioComponent->Play();
+	if (Music) {
+		AudioComponent->SetSound(Music);
+		AudioComponent->Play();
+	}
 }
 
 FInteractionResult ARadio::Interact(UInteractionComponent* InteractionSource)
 {
-	if (Music) {
+	if (AudioComponent) {
 		AudioComponent->SetTriggerParameter(FName("NextSound"));
 		return FInteractionResult(true, bIsToggleInteraction);
 	}
