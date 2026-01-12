@@ -8,7 +8,6 @@
 #include "EnhancedInputSubsystems.h"
 #include "Logging/StructuredLog.h"
 #include <Kismet/GameplayStatics.h>
-#include "Component/InteractionComponent.h"
 
 // Sets default values
 ALever::ALever()
