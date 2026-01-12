@@ -10,17 +10,14 @@ bool AInteractableBase::Interact(UInteractionComponent* InteractionSource)
 
 void AInteractableBase::Hover(UInteractionComponent* InteractionSource)
 {
-	for (UPrimitiveComponent* Comp : ToOutlines) {
+	for (UPrimitiveComponent* Comp : ToOutline) {
 		Comp->SetRenderCustomDepth(true);
 	}
 }
 
 void AInteractableBase::StopHover(UInteractionComponent* InteractionSource)
 {
-	for (UPrimitiveComponent* Comp : ToOutlines) {
+	for (UPrimitiveComponent* Comp : ToOutline) {
 		Comp->SetRenderCustomDepth(false);
 	}
 }
-
-
-

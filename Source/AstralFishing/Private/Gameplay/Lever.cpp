@@ -21,9 +21,11 @@ ALever::ALever()
 
 	LeverBaseMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SM LeverBase"));
 	RootComponent = LeverBaseMesh;
+	ToOutline.Add(LeverBaseMesh);
 
 	LeverMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SM Lever"));
 	LeverMesh->SetupAttachment(RootComponent);
+	ToOutline.Add(LeverMesh);
 
 	FRotator BaseRotation = LeverMesh->GetRelativeRotation();
 	BaseRotation.Roll = 0;
