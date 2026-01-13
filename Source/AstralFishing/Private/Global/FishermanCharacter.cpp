@@ -9,6 +9,7 @@
 #include "InputTriggers.h"
 #include "Interface/Interactable.h"
 #include "Component/InteractionComponent.h"
+#include "Camera/CameraComponent.h"
 
 DEFINE_LOG_CATEGORY(LogFishermanCharacter);
 
@@ -19,13 +20,22 @@ AFishermanCharacter::AFishermanCharacter()
 	PrimaryActorTick.bCanEverTick = false;
 
 	InteractionComponent = CreateDefaultSubobject<UInteractionComponent>(TEXT("InteractionComponent"));
+
+	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
+	CameraComponent->SetupAttachment(RootComponent);
+	CameraComponent->bUsePawnControlRotation = true;
+	CameraComponent->bEnableFirstPersonFieldOfView = true;
+	CameraComponent->bEnableFirstPersonScale = true;
+
+	FirstPersonMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FirstPersonMesh"));
+	FirstPersonMeshComponent->SetupAttachment(CameraComponent);
+	FirstPersonMeshComponent->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
 }
 
 void AFishermanCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	InteractionComponent->Owner = this;
 }
 
 void AFishermanCharacter::Tick(float DeltaTime)
@@ -45,17 +55,13 @@ void AFishermanCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AFishermanCharacter::Look);
-
-		// Interact
-		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &AFishermanCharacter::Interact);
-
-		// Use
-		EnhancedInputComponent->BindAction(UseAction, ETriggerEvent::Started, this, &AFishermanCharacter::Use);
 	}
 	else
 	{
 		UE_LOG(LogFishermanCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
 	}
+
+	InteractionComponent->SetupInputs();
 }
 
 void AFishermanCharacter::NotifyControllerChanged()
@@ -98,36 +104,9 @@ void AFishermanCharacter::Move(const FInputActionValue& Value)
 	}
 }
 
-void AFishermanCharacter::Interact(const FInputActionValue& Value)
+UCameraComponent* AFishermanCharacter::GetFirstPersonCamera()
 {
-	if (InteractionComponent->TryInteract()) {
-		if (InteractionComponent->bIsInteracting) {
-			// RemoveDefaultMappingContext();
-		}
-		else {
-			// AddDefaultMappingContext();
-		}
-	}
-
-// 	if (IInteractable* InteractableObject = Cast<IInteractable>(CurrentInteractionTarget)) {
-// 		if (bIsInteracting) {
-// 			if (InteractableObject->StopInteract(this)) {
-// 				AddDefaultMappingContext();
-// 				bIsInteracting = false;
-// 			}
-// 		}
-// 		else {
-// 			if (InteractableObject->Interact(this)) {
-// 				RemoveDefaultMappingContext();
-// 				bIsInteracting = true;
-// 			}
-// 		}
-// 	}
-}
-
-void AFishermanCharacter::Use(const FInputActionValue& Value)
-{
-
+	return CameraComponent;
 }
 
 void AFishermanCharacter::AddDefaultMappingContext()

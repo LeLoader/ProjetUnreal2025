@@ -44,11 +44,11 @@ FInteractionResult ACooler::Interact(UInteractionComponent* InteractionSource)
 {
 	if (!Widget) return FInteractionResult(false, bIsToggleInteraction);
 
-	if (APlayerController* PlayerController = Cast<APlayerController>(InteractionSource->Owner->Controller)) {
+	if (APlayerController* PlayerController = Cast<APlayerController>(InteractionSource->OwningCharacter->Controller)) {
 		PlayerController->SetShowMouseCursor(true);
 		FIntPoint ViewportSize = GEditor->GetActiveViewport()->GetSizeXY();
 		PlayerController->SetMouseLocation(ViewportSize.X / 2, ViewportSize.Y / 2); // Assumed this is the center
-
+		// PlayerController->SetInputMode(FInputModeUIOnly());
 		Widget->AddToViewport();
 		return FInteractionResult(true, bIsToggleInteraction);
 	}
@@ -59,9 +59,9 @@ bool ACooler::StopInteract(UInteractionComponent* InteractionSource)
 {
 	if (!Widget) return false;
 
-	if (APlayerController* PlayerController = Cast<APlayerController>(InteractionSource->Owner->Controller)) {
+	if (APlayerController* PlayerController = Cast<APlayerController>(InteractionSource->OwningCharacter->Controller)) {
 		PlayerController->SetShowMouseCursor(false);
-
+		// PlayerController->SetInputMode(FInputModeGameAndUI());
 		Widget->RemoveFromParent();
 		return true;
 	}

@@ -12,13 +12,15 @@
 struct FInputActionValue;
 class UInputMappingContext;
 class UInputAction;
+class UCameraComponent;
 class UInteractionComponent;
+class USkeletalMeshComponent;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogFishermanCharacter, Log, All);
 
 #pragma region Delegates
  
-	// Delegates
+	// Event
  
  #pragma endregion Delegates
 
@@ -39,11 +41,9 @@ protected:
 private:
 	void Look(const FInputActionValue& Value);
 	void Move(const FInputActionValue& Value);
-	void Use(const FInputActionValue& Value);
 
 #pragma region Events
-
-	// Events
+	// Event
 
 #pragma endregion Events
 
@@ -52,6 +52,12 @@ private:
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInteractionComponent> InteractionComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UCameraComponent> CameraComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<USkeletalMeshComponent> FirstPersonMeshComponent;
 
 #pragma endregion Components
 
@@ -69,22 +75,11 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> MoveAction;
 
-	/** Interact Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UInputAction> InteractAction;
-
-	/** Use Input Action */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UInputAction> UseAction;
-
 #pragma endregion Inputs
 
-#pragma region Interactable
-
-	UFUNCTION()
-	void Interact(const FInputActionValue& Value);
-
-#pragma endregion Interactable
+public:
+	UFUNCTION(BlueprintCallable)
+	UCameraComponent* GetFirstPersonCamera();
 
 private:
 	void AddDefaultMappingContext();

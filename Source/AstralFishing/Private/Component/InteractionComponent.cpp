@@ -3,18 +3,51 @@
 
 #include "Component/InteractionComponent.h"
 
-#include "GameFramework/Character.h"
 #include "Interface/Interactable.h"
 #include "UObject/ScriptInterface.h"
+#include "EnhancedInputComponent.h"
+#include "Global/FishermanCharacter.h"
+#include "Camera/CameraComponent.h"
 
 #define ECC_Interactable ECC_GameTraceChannel7
 
 UInteractionComponent::UInteractionComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
-
+	bWantsInitializeComponent = true;
 }
 
+void UInteractionComponent::OnRegister()
+{
+	Super::OnRegister();
+
+	OwningCharacter = Cast<ACharacter>(GetOwner());
+}
+
+
+void UInteractionComponent::OnUnregister()
+{
+	Super::OnUnregister();
+
+	if (OwningCharacter) {
+		if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(OwningCharacter->InputComponent)) {
+			EnhancedInputComponent->RemoveActionBindingForHandle(InteractStartedHandle);
+			EnhancedInputComponent->RemoveActionBindingForHandle(UseStartedHandle);
+		}
+
+		OwningCharacter = nullptr;
+	}
+}
+
+void UInteractionComponent::SetupInputs()
+{
+	if (OwningCharacter) {
+		if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(OwningCharacter->InputComponent)) {
+			InteractStartedHandle = EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &UInteractionComponent::TryInteract).GetHandle();
+			UseStartedHandle = EnhancedInputComponent->BindAction(UseAction, ETriggerEvent::Started, this, &UInteractionComponent::TryUse).GetHandle();
+		}
+	}
+}
 
 void UInteractionComponent::BeginPlay()
 {
@@ -31,7 +64,7 @@ void UInteractionComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 
 void UInteractionComponent::TraceToFindNearestInteractable()
 {
-	if (!Owner->Controller) {
+	if (!OwningCharacter->Controller) {
 		return;
 	}
 
@@ -41,41 +74,13 @@ void UInteractionComponent::TraceToFindNearestInteractable()
 
 	FHitResult Hit;
 	TArray<FHitResult> Hits;
-	FVector StartLocation = Cast<APlayerController>(Owner->Controller)->PlayerCameraManager->GetCameraLocation();
-	FVector EndLocation = StartLocation + Owner->GetBaseAimRotation().Vector() * TraceLength;
+	FVector StartLocation = Cast<AFishermanCharacter>(OwningCharacter)->GetFirstPersonCamera()->GetComponentTransform().GetLocation();
+	FVector EndLocation = StartLocation + OwningCharacter->GetBaseAimRotation().Vector() * TraceLength;
 	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(Owner);
-
-	// Multi logic
-	// GetWorld()->SweepMultiByChannel(Hits, StartLocation, EndLocation, FQuat::Identity, ECC_Interactable, FCollisionShape::MakeSphere(TraceWidth), Params);
-	// GetWorld()->LineTraceMultiByChannel(Hits, StartLocation, EndLocation, ECC_Interactable, Params);
-	// 	if (Hits.Num() != 0)
-	// 	{
-	// 		AActor* PrioritaryInteractableActor = Hits[0].GetActor();
-	// 		for (FHitResult Hit : Hits)
-	// 		{
-	// 			if (IInteractable* Interactable = Cast<IInteractable>(Hit.GetActor())) {
-	// 				if (Cast<IInteractable>(PrioritaryInteractableActor)->GetPriority() < Interactable->GetPriority()) {
-	// 					PrioritaryInteractableActor = Hit.GetActor();
-	// 				}
-	// 			}
-	// 		}
-	// 
-	// 		if (CurrentInteractionTarget != PrioritaryInteractableActor) {
-	// 			OnNewInteractionTarget.Broadcast(PrioritaryInteractableActor, CurrentInteractionTarget);
-	// 		}
-	// 		CurrentInteractionTarget = PrioritaryInteractableActor;
-	// 	}
-	// 	else
-	// 	{
-	// 		if (IsValid(CurrentInteractionTarget)) {
-	// 			OnNewInteractionTarget.Broadcast(nullptr, CurrentInteractionTarget);
-	// 		}
-	// 		CurrentInteractionTarget = nullptr;
-	// 	}
+	Params.AddIgnoredActor(OwningCharacter);
 
 	GetWorld()->LineTraceSingleByChannel(Hit, StartLocation, EndLocation, ECC_Interactable, Params);
-	if (Hit.bBlockingHit && IsValid(Hit.GetActor()) && Cast<IInteractable>(Hit.GetActor())) {
+	if (Hit.bBlockingHit && IsValid(Hit.GetActor())) {
 		if (TScriptInterface<IInteractable> NewInteractionTarget = TScriptInterface<IInteractable>(Hit.GetActor())) {
 			if (CurrentInteractionTarget != NewInteractionTarget) {
 				OnNewInteractionTarget.Broadcast(NewInteractionTarget, CurrentInteractionTarget);
@@ -86,38 +91,31 @@ void UInteractionComponent::TraceToFindNearestInteractable()
 				//
 				CurrentInteractionTarget = NewInteractionTarget;
 			}
+			return;
 		}
 	}
-	else {
-		if (CurrentInteractionTarget != nullptr) {
-			OnNewInteractionTarget.Broadcast(nullptr, CurrentInteractionTarget);
-			CurrentInteractionTarget->StopHover(this);
-			//
-			CurrentInteractionTarget = nullptr;
-		}
+
+
+	if (CurrentInteractionTarget != nullptr) {
+		OnNewInteractionTarget.Broadcast(nullptr, CurrentInteractionTarget);
+		CurrentInteractionTarget->StopHover(this);
+		//
+		CurrentInteractionTarget = nullptr;
 	}
 }
 
-bool UInteractionComponent::TryInteract()
+void UInteractionComponent::TryInteract()
 {
 	if (bIsInteracting) {
-		if (StopInteract()) {
-			return true;
-		}
-		return false;
+		StopInteract();
 	}
 	else {
 		if (CurrentInteractionTarget) {
 			FInteractionResult Result = CurrentInteractionTarget->Interact(this);
-			if (Result.bHasSuccess) {
-				if (Result.bIsToggleInteraction) {
-					bIsInteracting = true;
-				}
-				return true;
+			if (Result.bHasSuccess && Result.bIsToggleInteraction) {
+				bIsInteracting = true;
 			}
-			return false;
 		}
-		return false;
 	}
 }
 
@@ -128,4 +126,14 @@ bool UInteractionComponent::StopInteract()
 		return true;
 	}
 	return false;
+}
+
+void UInteractionComponent::TryUse()
+{
+
+}
+
+bool UInteractionComponent::StopUse()
+{
+	return true;
 }

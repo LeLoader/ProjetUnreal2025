@@ -25,7 +25,7 @@ ALever::ALever()
 	ToOutline.Add(LeverBaseMeshComponent);
 
 	LeverMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SM Lever"));
-	LeverMeshComponent->SetupAttachment(RootComponent);
+	LeverMeshComponent->SetupAttachment(LeverBaseMeshComponent);
 	LeverMeshComponent->SetCollisionProfileName(InteractableProfileDynamic);
 	ToOutline.Add(LeverMeshComponent);
 
@@ -53,7 +53,7 @@ void ALever::Tick(float DeltaTime)
 
 FInteractionResult ALever::Interact(UInteractionComponent* InteractionSource)
 {
-	if (APlayerController* PlayerController = Cast<APlayerController>(InteractionSource->Owner->Controller))
+	if (APlayerController* PlayerController = Cast<APlayerController>(InteractionSource->OwningCharacter->Controller))
 	{
 		if (!InputComponent) {
 			return FInteractionResult(false, bIsToggleInteraction);
@@ -71,7 +71,7 @@ FInteractionResult ALever::Interact(UInteractionComponent* InteractionSource)
 
 bool ALever::StopInteract(UInteractionComponent* InteractionSource)
 {
-	AFishermanCharacter* FishermanCharacter = Cast<AFishermanCharacter>(InteractionSource->Owner);
+	AFishermanCharacter* FishermanCharacter = Cast<AFishermanCharacter>(InteractionSource->OwningCharacter);
 	if (!IsValid(FishermanCharacter)) {
 		FishermanCharacter = Cast<AFishermanCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 	}

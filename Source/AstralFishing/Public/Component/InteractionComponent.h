@@ -10,6 +10,7 @@
 
 class IInteractable;
 class ACharacter;
+class UInputAction;
 
 #pragma region Delegates
 
@@ -24,10 +25,14 @@ class ASTRALFISHING_API UInteractionComponent : public UActorComponent
 
 public:	
 	UInteractionComponent();
+	virtual void OnRegister() override;
+	virtual void OnUnregister() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	void SetupInputs();
 
 protected:
 	virtual void BeginPlay() override;
+
 
 #pragma region Events
 
@@ -37,18 +42,35 @@ public:
 
 #pragma endregion Events
 
+#pragma region Inputs
+	/** Interact Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInputAction> InteractAction;
+
+	/** Use Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInputAction> UseAction;
+
+#pragma endregion Inputs
+
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (Units = "cm"))
 	float TraceLength = 100;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TObjectPtr<ACharacter> Owner;
+	TObjectPtr<ACharacter> OwningCharacter;
 
 	UFUNCTION()
-	bool TryInteract();
+	void TryInteract();
 
 	UFUNCTION()
 	bool StopInteract();
+
+	UFUNCTION()
+	void TryUse();
+
+	UFUNCTION()
+	bool StopUse();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool bIsInteracting;
@@ -59,5 +81,6 @@ private:
 
 	void TraceToFindNearestInteractable();
 
-
+	uint32 InteractStartedHandle;
+	uint32 UseStartedHandle;
 };
