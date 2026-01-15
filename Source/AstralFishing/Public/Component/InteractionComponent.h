@@ -11,6 +11,7 @@
 class IInteractable;
 class ACharacter;
 class UInputAction;
+class UInputMappingContext;
 
 #pragma region Delegates
 
@@ -43,6 +44,11 @@ public:
 #pragma endregion Events
 
 #pragma region Inputs
+
+	/** MappingContext */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInputMappingContext> InteractionMappingContext;
+
 	/** Interact Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInputAction> InteractAction;

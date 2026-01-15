@@ -6,6 +6,7 @@
 #include "Interface/Interactable.h"
 #include "UObject/ScriptInterface.h"
 #include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
 #include "Global/FishermanCharacter.h"
 #include "Camera/CameraComponent.h"
 
@@ -30,6 +31,14 @@ void UInteractionComponent::OnUnregister()
 	Super::OnUnregister();
 
 	if (OwningCharacter) {
+		if (APlayerController* PlayerController = Cast<APlayerController>(OwningCharacter->Controller))
+		{
+			if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+			{
+				Subsystem->RemoveMappingContext(InteractionMappingContext);
+			}
+		}
+
 		if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(OwningCharacter->InputComponent)) {
 			EnhancedInputComponent->RemoveActionBindingForHandle(InteractStartedHandle);
 			EnhancedInputComponent->RemoveActionBindingForHandle(UseStartedHandle);
@@ -42,6 +51,15 @@ void UInteractionComponent::OnUnregister()
 void UInteractionComponent::SetupInputs()
 {
 	if (OwningCharacter) {
+
+		if (APlayerController* PlayerController = Cast<APlayerController>(OwningCharacter->Controller))
+		{
+			if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+			{
+				Subsystem->AddMappingContext(InteractionMappingContext, 0);
+			}
+		}
+
 		if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(OwningCharacter->InputComponent)) {
 			InteractStartedHandle = EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &UInteractionComponent::TryInteract).GetHandle();
 			UseStartedHandle = EnhancedInputComponent->BindAction(UseAction, ETriggerEvent::Started, this, &UInteractionComponent::TryUse).GetHandle();
@@ -108,12 +126,14 @@ void UInteractionComponent::TryInteract()
 {
 	if (bIsInteracting) {
 		StopInteract();
+		Cast<AFishermanCharacter>(OwningCharacter)->AddDefaultMappingContext();
 	}
 	else {
 		if (CurrentInteractionTarget) {
 			FInteractionResult Result = CurrentInteractionTarget->Interact(this);
 			if (Result.bHasSuccess && Result.bIsToggleInteraction) {
 				bIsInteracting = true;
+				Cast<AFishermanCharacter>(OwningCharacter)->RemoveDefaultMappingContext();
 			}
 		}
 	}

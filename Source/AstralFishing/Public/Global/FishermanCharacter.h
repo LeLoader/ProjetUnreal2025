@@ -81,7 +81,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	UCameraComponent* GetFirstPersonCamera();
 
-private:
 	void AddDefaultMappingContext();
 	void RemoveDefaultMappingContext();
+private:
+
 };

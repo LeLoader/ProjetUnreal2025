@@ -30,6 +30,7 @@ AFishermanCharacter::AFishermanCharacter()
 	FirstPersonMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FirstPersonMesh"));
 	FirstPersonMeshComponent->SetupAttachment(CameraComponent);
 	FirstPersonMeshComponent->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::FirstPerson);
+	FirstPersonMeshComponent->bOnlyOwnerSee = true;
 }
 
 void AFishermanCharacter::BeginPlay()
