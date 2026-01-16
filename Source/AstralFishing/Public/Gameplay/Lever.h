@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Interface/Interactable.h"
+#include "Interfaces/Interactable.h"
 #include "Gameplay/InteractableBase.h"
 #include "Delegates/Delegate.h"
 
@@ -40,6 +40,14 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+#pragma region Interaction Implementation
+
+public:
+	FInteractionResult Interact(UInteractionComponent* InteractionSource) override;
+	bool StopInteract(UInteractionComponent* InteractionSource) override;
+
+#pragma endregion Interaction Implementation
+
 #pragma region Events
 
 public:
@@ -75,14 +83,6 @@ private:
 	TObjectPtr<UInputAction> StopInteractAction;
 
 #pragma endregion Inputs
-	
-#pragma region Interaction Implementation
-
-public:
-	FInteractionResult Interact(UInteractionComponent* InteractionSource) override;
-	bool StopInteract(UInteractionComponent* InteractionSource) override;
-
-#pragma endregion Interaction Implementation
 
 public:
 	UPROPERTY(EditAnywhere, meta = (Units = "deg", UIMin = 10, UIMax = 90, ClampMin = 10, ClampMax = 90))

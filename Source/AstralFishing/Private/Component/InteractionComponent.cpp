@@ -3,7 +3,7 @@
 
 #include "Component/InteractionComponent.h"
 
-#include "Interface/Interactable.h"
+#include "Interfaces/Interactable.h"
 #include "UObject/ScriptInterface.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"

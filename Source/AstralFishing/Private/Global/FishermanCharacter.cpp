@@ -7,13 +7,10 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "InputTriggers.h"
-#include "Interface/Interactable.h"
 #include "Component/InteractionComponent.h"
 #include "Camera/CameraComponent.h"
 
 DEFINE_LOG_CATEGORY(LogFishermanCharacter);
-
-#define ECC_Interactable ECC_GameTraceChannel7
 
 AFishermanCharacter::AFishermanCharacter()
 {

@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Interface/Interactable.h"
+#include "Interfaces/Interactable.h"
 #include "Gameplay/InteractableBase.h"
 
 #include "Radio.generated.h"
