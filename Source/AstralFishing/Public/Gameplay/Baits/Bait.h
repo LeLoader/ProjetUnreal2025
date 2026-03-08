@@ -33,7 +33,7 @@ public:
 	FHarpoonResult Harpoon() override;
 	bool Scan() override;
 
-#pragma region Harpoonable Implementation
+#pragma endregion Harpoonable Implementation
 
 #pragma region Components
 
