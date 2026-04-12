@@ -3,6 +3,8 @@
 
 #include "CustomCurve/CurveAsteroidSegment.h"
 
+#include <Logging/StructuredLog.h>
+
 // Sets default values for this component's properties
 UCurveAsteroidSegment::UCurveAsteroidSegment()
 {
@@ -17,7 +19,15 @@ UCurveAsteroidSegment::UCurveAsteroidSegment()
 		FloatCurves[1].AddKey(0.f, 0.5f);
 		FloatCurves[2].AddKey(0.f, 100.f);
 	}
+
+	OnUpdateCurve.AddUObject(this, &ThisClass::UpdatePrevCurves);
 #endif
+}
+
+void UCurveAsteroidSegment::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
 }
 
 float UCurveAsteroidSegment::GetSizeValue(float InTime) const
@@ -35,14 +45,8 @@ float UCurveAsteroidSegment::GetRadiusValue(float InTime) const
 	return FloatCurves[2].Eval(InTime);
 }
 
-void UCurveAsteroidSegment::OnCurveChanged(const TArray<FRichCurveEditInfo>& ChangedCurveEditInfos)
-{
-	Super::OnCurveChanged(ChangedCurveEditInfos);
-	OnCurveHasChanged.ExecuteIfBound();
-}
-
-static const FName DensityCurveName(TEXT("Density"));
 static const FName SizeCurveName(TEXT("Size"));
+static const FName DensityCurveName(TEXT("Density"));
 static const FName RadiusCurveName(TEXT("Radius"));
 
 TArray<FRichCurveEditInfoConst> UCurveAsteroidSegment::GetCurves() const
@@ -61,4 +65,21 @@ TArray<FRichCurveEditInfo> UCurveAsteroidSegment::GetCurves()
 	Curves.Add(FRichCurveEditInfo(&FloatCurves[1], DensityCurveName));
 	Curves.Add(FRichCurveEditInfo(&FloatCurves[2], RadiusCurveName));
 	return Curves;
+}
+
+void UCurveAsteroidSegment::UpdatePrevCurves(UCurveBase* Curve, uint32 ChangeType)
+{
+	if (PrevFloatCurves[0] != FloatCurves[0]) {
+		OnSizeChanged.Broadcast();
+	}
+	else if (PrevFloatCurves[1] != FloatCurves[1]) {
+		OnDensityChanged.Broadcast();
+	}
+	else if (PrevFloatCurves[2] != FloatCurves[2]) {
+		OnRadiusChanged.Broadcast();
+	}
+
+	PrevFloatCurves[0] = FloatCurves[0];
+	PrevFloatCurves[1] = FloatCurves[1];
+	PrevFloatCurves[2] = FloatCurves[2];
 }

@@ -8,6 +8,10 @@
 #include "CustomCurve/CurveAsteroidSegment.h"
 #include <Kismet/KismetMathLibrary.h>
 #include <Logging/StructuredLog.h>
+#include "Widgets/Notifications/SNotificationList.h"
+#include "Framework/Notifications/NotificationManager.h"
+#include "UObject/UnrealType.h"
+
 
 // Sets default values
 AAsteroidBelt::AAsteroidBelt()
@@ -16,16 +20,15 @@ AAsteroidBelt::AAsteroidBelt()
 	PrimaryActorTick.bCanEverTick = true;
 
 	SplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("SplineComponent"));
-	for (UCurveAsteroidSegment* Curve : SegmentsCurve) {
-		Curve->OnCurveHasChanged.BindUObject(this, &ThisClass::SpawnAsteroids);
-	}
 }
+
+#if WITH_EDITOR
 
 void AAsteroidBelt::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
-	
-	if (SegmentsCurve.IsEmpty()){
+
+	if (SegmentsCurve.IsEmpty()) {
 		return;
 	}
 
@@ -34,9 +37,48 @@ void AAsteroidBelt::PostEditChangeProperty(FPropertyChangedEvent& PropertyChange
 			return;
 		}
 
-		Curve->OnCurveHasChanged.BindUObject(this, &ThisClass::SpawnAsteroids);
+		if (!Curve->OnSizeChanged.IsBoundToObject(this)) {
+			Curve->OnSizeChanged.AddUObject(this, &ThisClass::OnSizeChanged);
+		}
+
+		if (!Curve->OnDensityChanged.IsBoundToObject(this)) {
+			Curve->OnDensityChanged.AddUObject(this, &ThisClass::OnDensityChanged);
+		}
+
+		if (!Curve->OnRadiusChanged.IsBoundToObject(this)) {
+			Curve->OnRadiusChanged.AddUObject(this, &ThisClass::OnRadiusChanged);
+		}
 	}
 }
+
+void AAsteroidBelt::PostRegisterAllComponents() {
+
+	Super::PostRegisterAllComponents();
+
+	if (SegmentsCurve.IsEmpty()) {
+		return;
+	}
+
+	for (UCurveAsteroidSegment* Curve : SegmentsCurve) {
+		if (!IsValid(Curve)) {
+			return;
+		}
+
+		if (!Curve->OnSizeChanged.IsBoundToObject(this)) {
+			Curve->OnSizeChanged.AddUObject(this, &ThisClass::OnSizeChanged);
+		}
+
+		if (!Curve->OnDensityChanged.IsBoundToObject(this)) {
+			Curve->OnDensityChanged.AddUObject(this, &ThisClass::OnDensityChanged);
+		}
+
+		if (!Curve->OnRadiusChanged.IsBoundToObject(this)) {
+			Curve->OnRadiusChanged.AddUObject(this, &ThisClass::OnRadiusChanged);
+		}
+	}
+}
+
+#endif WITH_EDITOR
 
 // Called when the game starts or when spawned
 void AAsteroidBelt::BeginPlay()
@@ -52,6 +94,8 @@ void AAsteroidBelt::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 }
+
+#if WITH_EDITOR
 
 void AAsteroidBelt::SpawnAsteroids()
 {
@@ -80,7 +124,7 @@ void AAsteroidBelt::SpawnAsteroids()
 
 		float CurrentDistance = SegmentStartDistance;
 		float CurrentDistanceNormalized = 0;
-		float const DistanceIncrement = SegmentLength / MaxAttempt;
+		float const DistanceIncrement = SegmentLength / MaxAttemptPerSegment;
 
 		// Debug
 		int const MAX_ITERATION_PER_SEGMENT = 1000;
@@ -102,7 +146,7 @@ void AAsteroidBelt::SpawnAsteroids()
 			Params.NameMode = FActorSpawnParameters::ESpawnActorNameMode::Requested;
 
 			FAsteroidData FutureAsteroid = FAsteroidData(AsteroidsClasses[AsteroidClassIndex], SegmentCurve, CurrentDistance, CurrentDistanceNormalized, Params);
-			AsteroidCreationPool.Enqueue(FutureAsteroid);
+			AsteroidCreationPool.Push(FutureAsteroid);
 
 			CurrentDistance += DistanceIncrement;
 			CurrentDistanceNormalized = CurrentDistance / SegmentEndDistance;
@@ -110,12 +154,16 @@ void AAsteroidBelt::SpawnAsteroids()
 		}
 	}
 
+	ProgressHandle = FSlateNotificationManager::Get().StartProgressNotification(FText::FromString("Spawning Asteroids..."), AsteroidCreationPool.Num());
+	alreadyProcessed = 0;
 	ProcessAsteroidInPool();
 }
 
-
 void AAsteroidBelt::DestroyAsteroids() {
-	for (AAsteroid* Asteroid : Asteroids)
+	TSet<AAsteroid*> AsteroidsActors;
+	Asteroids.GetKeys(AsteroidsActors);
+	
+	for (AAsteroid* Asteroid : AsteroidsActors)
 	{
 		if (IsValid(Asteroid)) {
 			Asteroid->Destroy(true);
@@ -124,25 +172,43 @@ void AAsteroidBelt::DestroyAsteroids() {
 	Asteroids.Empty();
 }
 
+void AAsteroidBelt::CancelCurrentSpawning()
+{
+
+	bCancelRequested = true;
+}
+
 void AAsteroidBelt::ProcessAsteroidInPool()
 {
+	if (bCancelRequested) {
+		FSlateNotificationManager::Get().UpdateProgressNotification(ProgressHandle, alreadyProcessed, 0, FText::FromString("Canceling..."));
+		FSlateNotificationManager::Get().CancelProgressNotification(ProgressHandle);
+		AsteroidCreationPool.Empty();
+		bCancelRequested = false;
+		bIsCreatingAsteroids = false;
+		ProgressHandle.Reset();
+		return;
+	}
+
 	if (!bIsCreatingAsteroids) {
 		return;
 	}
 
 	if (AsteroidCreationPool.IsEmpty()) {
 		bIsCreatingAsteroids = false;
+		ProgressHandle.Reset();
 		return;
 	}
 
 	float StartProcessingTime = GetWorld()->RealTimeSeconds;
 	int processed = 0;
+	int failed = 0;
 
 	while (FMath::Abs(GetWorld()->RealTimeSeconds - StartProcessingTime) < MAX_PROCESSING_TIME && processed < MAX_PROCESSING_COUNT_PER_FRAME && !AsteroidCreationPool.IsEmpty()) {
-		FAsteroidData AsteroidData;
-		AsteroidCreationPool.Dequeue(AsteroidData);
+		FAsteroidData AsteroidData = AsteroidCreationPool.Pop();
 
 		if (FMath::FRand() >= AsteroidData.SegmentCurve->GetDensityValue(AsteroidData.CurrentDistanceNormalized)) {
+			failed++;
 			continue;
 		}
 
@@ -162,6 +228,7 @@ void AAsteroidBelt::ProcessAsteroidInPool()
 
 		// Scale
 		if (AsteroidData.SegmentCurve->GetSizeValue(AsteroidData.CurrentDistanceNormalized) < 0.1f) {
+			failed++;
 			continue;
 		}
 		NextTransform.SetScale3D(FVector::OneVector * AsteroidData.SegmentCurve->GetSizeValue(AsteroidData.CurrentDistanceNormalized));
@@ -170,11 +237,54 @@ void AAsteroidBelt::ProcessAsteroidInPool()
 		AAsteroid* Asteroid = GetWorld()->SpawnActor<AAsteroid>(AsteroidData.ClassToSpawn, NextTransform, AsteroidData.SpawnParams);
 
 		if (IsValid(Asteroid)) {
+
 			Asteroid->SetFolderPath("Asteroids");
-			Asteroids.Add(Asteroid);
+
+			Asteroids.Add(Asteroid, AsteroidData);
 		}
 		processed++;
 	}
-	UE_LOGFMT(LogTemp, Display, "Processed {0} spawn(s) between {1} and {2}", processed, StartProcessingTime, GetWorld()->RealTimeSeconds);
+
+	alreadyProcessed += processed + failed;
+
+	FText NewTitle = FText::FromString(FString("Creating Asteroid ") + FString::FromInt(alreadyProcessed));
+	FSlateNotificationManager::Get().UpdateProgressNotification(ProgressHandle, alreadyProcessed, 0, NewTitle);
+	float timeBetween = (GetWorld()->RealTimeSeconds - StartProcessingTime) * FMath::Pow(10.f, 9);
+	UE_LOGFMT(LogTemp, Display, "Processed {0} spawn(s) ({1} failed) in {2} ns", processed + failed, failed, timeBetween);
 	GetWorldTimerManager().SetTimerForNextTick(this, &ThisClass::ProcessAsteroidInPool);
 }
+
+void AAsteroidBelt::OnSizeChanged()
+{
+	UE_LOGFMT(LogTemp, Display, "Size Changed");
+
+	TSet<AAsteroid*> AsteroidsActors;
+	Asteroids.GetKeys(AsteroidsActors);
+	
+
+	for (AAsteroid* Asteroid : AsteroidsActors)
+	{
+		if (IsValid(Asteroid)) {
+			FAsteroidData* AsteroidData = Asteroids.Find(Asteroid);
+			Asteroid->SetActorScale3D(FVector::OneVector * AsteroidData->SegmentCurve->GetSizeValue(AsteroidData->CurrentDistanceNormalized));
+		}
+	}
+}
+
+void AAsteroidBelt::OnDensityChanged()
+{
+	UE_LOGFMT(LogTemp, Display, "Density Changed");
+}
+
+void AAsteroidBelt::OnRadiusChanged()
+{
+	UE_LOGFMT(LogTemp, Display, "Radius Changed");
+}
+
+
+void AAsteroidBelt::OnUpdateCurve(UCurveBase* Curve, uint32 ChangeType)
+{
+	UE_LOGFMT(LogTemp, Display, "Curve updated! {0} {1}", Curve->GetName(), ChangeType);
+}
+
+#endif WITH_EDITOR

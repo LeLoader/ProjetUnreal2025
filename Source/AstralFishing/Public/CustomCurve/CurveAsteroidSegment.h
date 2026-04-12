@@ -9,7 +9,9 @@
 #include "Delegates/Delegate.h"
 #include "CurveAsteroidSegment.generated.h"
 
-DECLARE_DELEGATE(FOnCurveChangedSignature);
+DECLARE_MULTICAST_DELEGATE(FOnSizeChangedSignature);
+DECLARE_MULTICAST_DELEGATE(FOnDensityChangedSignature);
+DECLARE_MULTICAST_DELEGATE(FOnRadiusChangedSignature);
 
 UCLASS(BlueprintType, collapsecategories, hidecategories = (FilePath))
 class ASTRALFISHING_API UCurveAsteroidSegment : public UCurveBase
@@ -19,6 +21,9 @@ class ASTRALFISHING_API UCurveAsteroidSegment : public UCurveBase
 public:	
 	// Sets default values for this component's properties
 	UCurveAsteroidSegment();
+
+protected:
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 
 public:
 	UFUNCTION(BlueprintCallable, Category="Math|Curves")
@@ -30,8 +35,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Math|Curves")
 	virtual float GetRadiusValue(float InTime) const;
 
-	virtual void OnCurveChanged(const TArray<FRichCurveEditInfo>& ChangedCurveEditInfos) override;
-	FOnCurveChangedSignature OnCurveHasChanged;
+	FOnSizeChangedSignature OnSizeChanged;
+	FOnDensityChangedSignature OnDensityChanged;
+	FOnRadiusChangedSignature OnRadiusChanged;
 
 private:
 
@@ -41,5 +47,8 @@ private:
 	virtual TArray<FRichCurveEditInfoConst> GetCurves() const override;
 	virtual TArray<FRichCurveEditInfo> GetCurves() override;
 
-	
+	void UpdatePrevCurves(UCurveBase* Curve, uint32 ChangeType);
+
+	UPROPERTY()
+	FRichCurve PrevFloatCurves[3];
 };
