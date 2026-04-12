@@ -46,7 +46,8 @@ FInteractionResult ACooler::Interact(UInteractionComponent* InteractionSource)
 
 	if (APlayerController* PlayerController = Cast<APlayerController>(InteractionSource->OwningCharacter->Controller)) {
 		PlayerController->SetShowMouseCursor(true);
-		FIntPoint ViewportSize = GEditor->GetActiveViewport()->GetSizeXY();
+		FVector2D ViewportSize = FVector2D();
+		GEngine->GameViewport->GetViewportSize(ViewportSize);
 		PlayerController->SetMouseLocation(ViewportSize.X / 2, ViewportSize.Y / 2); // Assumed this is the center
 		// PlayerController->SetInputMode(FInputModeUIOnly());
 		Widget->AddToViewport();
