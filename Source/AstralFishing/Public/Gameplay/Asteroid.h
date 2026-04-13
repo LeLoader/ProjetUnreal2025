@@ -29,6 +29,5 @@ private:
 #pragma endregion Components
 
 public:
-	UPROPERTY()
 	float CurrentDistance;
 };

@@ -32,6 +32,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category="Math|Curves")
 	virtual float GetRadiusValue(float InTime) const;
 
+	UFUNCTION()
+	bool IsSegmentLinked(UCurveAsteroidSegment* Segment);
+
 	FOnSizeChangedSignature OnSizeChanged;
 	FOnDensityChangedSignature OnDensityChanged;
 	FOnRadiusChangedSignature OnRadiusChanged;

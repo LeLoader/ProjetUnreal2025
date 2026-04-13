@@ -11,9 +11,10 @@
 #include "AsteroidBelt.generated.h"
 
 class USplineComponent;
-class AAsteroid;
 class UCurveAsteroidSegment;
 class UCurveBase;
+class AAsteroid;
+class ABait;
 
 USTRUCT()
 struct FAsteroidData 
@@ -56,8 +57,17 @@ protected:
 	UPROPERTY()
 	TMap<AAsteroid*, FAsteroidData> Asteroids;
 
+	UPROPERTY()
+	TArray<class ABait*> Baits;
+
 	UPROPERTY(EditAnywhere, Category = "Asteroid Belt", meta = (Units = "cm/s"))
 	float AsteroidsSpeed = 100;
+
+	UFUNCTION()
+	void MoveAsteroids(float DeltaTime);
+
+	UPROPERTY(EditAnywhere, Category = "Asteroid Belt|Editor")
+	TArray<TSubclassOf<AAsteroid>> BaitClasses;
 
 #pragma region Editor
 
@@ -67,39 +77,43 @@ protected:
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 	virtual void PostRegisterAllComponents() override;
 
-	UFUNCTION(CallInEditor, BlueprintCallable, Category = "Asteroid Belt")
+	UFUNCTION(CallInEditor, BlueprintCallable, Category = "Asteroid Belt|Editor")
 	void SpawnAsteroids();
 
-	UFUNCTION(CallInEditor, BlueprintCallable, Category = "Asteroid Belt")
+	UFUNCTION(CallInEditor, BlueprintCallable, Category = "Asteroid Belt|Editor")
 	void DestroyAsteroids();
 
-	UFUNCTION(CallInEditor, BlueprintCallable, Category = "Asteroid Belt")
+	UFUNCTION(CallInEditor, BlueprintCallable, Category = "Asteroid Belt|Editor")
 	void CancelCurrentSpawning();
+
+	UFUNCTION(CallInEditor, BlueprintCallable, Category = "Asteroid Belt|Editor")
+	void CheckIfSegmentAreLinked();
 
 	void OnSizeChanged();
 	void OnDensityChanged();
 	void OnRadiusChanged();
+	bool AreSegmentLinked(TArray<TPair<int, int>>& FailedResultsIndex);
 
 #endif WITH_EDITOR
 
 private:
-	UPROPERTY(EditAnywhere, Category = "Asteroid Belt")
-	TArray<TSubclassOf<AAsteroid>> AsteroidsClasses;
+	UPROPERTY(EditAnywhere, Category = "Asteroid Belt|Editor")
+	TArray<TSubclassOf<AAsteroid>> AsteroidClasses;
 
-	UPROPERTY(EditAnywhere, Category = "Asteroid Belt")
+	UPROPERTY(EditAnywhere, Category = "Asteroid Belt|Editor")
 	TArray<UCurveAsteroidSegment*> SegmentsCurve;
 
-	UPROPERTY(EditAnywhere, Category = "Asteroid Belt")
+	UPROPERTY(EditAnywhere, Category = "Asteroid Belt|Editor")
 	int MaxAttemptPerSegment = 100;
 
 	TArray<struct FAsteroidData> AsteroidCreationPool;
 	bool bIsCreatingAsteroids;
 	void ProcessAsteroidInPool();
 
-	UPROPERTY(EditAnywhere, Category = "Editor|Asteroid Belt")
+	UPROPERTY(EditAnywhere, Category = "Asteroid Belt|Editor")
 	float MAX_PROCESSING_TIME = 1.f / 60.f;
 
-	UPROPERTY(EditAnywhere, Category = "Editor|Asteroid Belt")
+	UPROPERTY(EditAnywhere, Category = "Asteroid Belt|Editor")
 	int MAX_PROCESSING_COUNT_PER_FRAME = 10;
 
 	FProgressNotificationHandle ProgressHandle;

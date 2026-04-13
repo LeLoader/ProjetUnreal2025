@@ -39,6 +39,21 @@ float UCurveAsteroidSegment::GetRadiusValue(float InTime) const
 	return FloatCurves[2].Eval(InTime);
 }
 
+bool UCurveAsteroidSegment::IsSegmentLinked(UCurveAsteroidSegment* Segment)
+{
+	int i = 0;
+	for (FRichCurve Curve : FloatCurves) {
+		FRichCurveKey KeyA = FloatCurves[i].GetLastKey();
+		FRichCurveKey KeyB = Segment->FloatCurves[i].GetFirstKey();
+		if (!FMath::IsNearlyEqual(KeyA.Value, KeyB.Value)) {
+			return false;
+		}
+
+		++i;
+	}
+	return true;
+}
+
 static const FName SizeCurveName(TEXT("Size"));
 static const FName DensityCurveName(TEXT("Density"));
 static const FName RadiusCurveName(TEXT("Radius"));

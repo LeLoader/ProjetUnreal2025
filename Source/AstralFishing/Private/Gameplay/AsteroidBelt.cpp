@@ -22,6 +22,45 @@ AAsteroidBelt::AAsteroidBelt()
 	SplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("SplineComponent"));
 }
 
+void AAsteroidBelt::BeginPlay()
+{
+	Super::BeginPlay();
+
+	TSet<AAsteroid*> AsteroidsActors;
+	Asteroids.GetKeys(AsteroidsActors);
+
+	for (AAsteroid* Asteroid : AsteroidsActors) {
+		if (IsValid(Asteroid)) {
+			Asteroid->CurrentDistance = SplineComponent->GetDistanceAlongSplineAtLocation(Asteroid->GetActorLocation(), ESplineCoordinateSpace::World);
+		}
+	}
+}
+
+void AAsteroidBelt::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	MoveAsteroids(DeltaTime);
+}
+
+void AAsteroidBelt::MoveAsteroids(float DeltaTime)
+{
+	TSet<AAsteroid*> AsteroidsActors;
+	Asteroids.GetKeys(AsteroidsActors);
+
+	for (AAsteroid* Asteroid : AsteroidsActors) {
+		if (LIKELY(Asteroid)) {
+			float NewDistance = FMath::Modulo(Asteroid->CurrentDistance + AsteroidsSpeed * DeltaTime, SplineComponent->GetSplineLength());
+			Asteroid->CurrentDistance = NewDistance;
+
+			FVector NewLocation = SplineComponent->GetLocationAtDistanceAlongSpline(NewDistance, ESplineCoordinateSpace::World);
+			// Asteroid->SetActorRelativeLocation(NewLocation);
+			Asteroid->GetRootComponent()->SetRelativeLocation_Direct(NewLocation);
+			Asteroid->GetRootComponent()->UpdateComponentToWorld(EUpdateTransformFlags::SkipPhysicsUpdate, ETeleportType::None);
+		}
+	}
+}
+
 #if WITH_EDITOR
 
 void AAsteroidBelt::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
@@ -78,44 +117,6 @@ void AAsteroidBelt::PostRegisterAllComponents() {
 	}
 }
 
-#endif WITH_EDITOR
-
-void AAsteroidBelt::BeginPlay()
-{
-	Super::BeginPlay();
-
-	TSet<AAsteroid*> AsteroidsActors;
-	Asteroids.GetKeys(AsteroidsActors);
-
-	for (AAsteroid* Asteroid : AsteroidsActors) {
-		if (IsValid(Asteroid)) {
-			Asteroid->CurrentDistance = SplineComponent->GetDistanceAlongSplineAtLocation(Asteroid->GetActorLocation(), ESplineCoordinateSpace::World);
-		}
-	}
-}
-
-void AAsteroidBelt::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-	TSet<AAsteroid*> AsteroidsActors;
-	Asteroids.GetKeys(AsteroidsActors);
-
-	for (AAsteroid* Asteroid : AsteroidsActors) {
-		if (IsValid(Asteroid)) {
-			float NewDistance = FMath::Modulo(Asteroid->CurrentDistance + AsteroidsSpeed * DeltaTime, SplineComponent->GetSplineLength());
-			Asteroid->CurrentDistance = NewDistance;
-
-			FVector NewLocation = SplineComponent->GetLocationAtDistanceAlongSpline(NewDistance, ESplineCoordinateSpace::World);
-			// Asteroid->SetActorLocation(NewLocation);
-			Asteroid->GetRootComponent()->SetRelativeLocation_Direct(NewLocation);
-			Asteroid->GetRootComponent()->UpdateComponentToWorld(EUpdateTransformFlags::SkipPhysicsUpdate, ETeleportType::None);
-		}
-	}
-}
-
-#if WITH_EDITOR
-
 void AAsteroidBelt::SpawnAsteroids()
 {
 	if (!IsValid(SplineComponent)) {
@@ -126,7 +127,7 @@ void AAsteroidBelt::SpawnAsteroids()
 		return;
 	}
 
-	if (AsteroidsClasses.IsEmpty()) {
+	if (AsteroidClasses.IsEmpty()) {
 		return;
 	}
 
@@ -155,16 +156,17 @@ void AAsteroidBelt::SpawnAsteroids()
 				break;
 			}
 
-			int AsteroidClassIndex = FMath::RandRange(0, AsteroidsClasses.Num() - 1);
+			int AsteroidClassIndex = FMath::RandRange(0, AsteroidClasses.Num() - 1);
 
 			FActorSpawnParameters Params;
 			Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::DontSpawnIfColliding;
+			Params.bNoFail = false;
 			Params.Name = FName("Asteroid-"
 				+ FString::FromInt(segmentIndex)
 				+ "-");
 			Params.NameMode = FActorSpawnParameters::ESpawnActorNameMode::Requested;
 
-			FAsteroidData FutureAsteroid = FAsteroidData(AsteroidsClasses[AsteroidClassIndex], SegmentCurve, CurrentDistance, CurrentDistanceNormalized, Params);
+			FAsteroidData FutureAsteroid = FAsteroidData(AsteroidClasses[AsteroidClassIndex], SegmentCurve, CurrentDistance, CurrentDistanceNormalized, Params);
 			AsteroidCreationPool.Push(FutureAsteroid);
 
 			CurrentDistance += DistanceIncrement;
@@ -197,6 +199,21 @@ void AAsteroidBelt::CancelCurrentSpawning()
 	bCancelRequested = true;
 }
 
+void AAsteroidBelt::CheckIfSegmentAreLinked()
+{
+	TArray<TPair<int, int>> FailedResultsIndex;
+	bool bResult = AreSegmentLinked(FailedResultsIndex);
+	if (!bResult) {
+		UE_LOGFMT(LogTemp, Display, "Those segments are not linked: ");
+		for (TPair<int, int> FailedResult : FailedResultsIndex) {
+			UE_LOGFMT(LogTemp, Display, " -{0} ({1}) | {2} ({3})", SegmentsCurve[FailedResult.Key]->GetName(), FailedResult.Key, SegmentsCurve[FailedResult.Value]->GetName(), FailedResult.Value);
+		}
+	}
+	else {
+		UE_LOGFMT(LogTemp, Display, "All segment are perfectly linked!");
+	}
+}
+
 void AAsteroidBelt::ProcessAsteroidInPool()
 {
 	if (bCancelRequested) {
@@ -223,7 +240,7 @@ void AAsteroidBelt::ProcessAsteroidInPool()
 	int processed = 0;
 	int failed = 0;
 
-	while (FMath::Abs(GetWorld()->RealTimeSeconds - StartProcessingTime) < MAX_PROCESSING_TIME && processed < MAX_PROCESSING_COUNT_PER_FRAME && !AsteroidCreationPool.IsEmpty()) {
+	while (FMath::Abs(GetWorld()->RealTimeSeconds - StartProcessingTime) < MAX_PROCESSING_TIME && processed + failed < MAX_PROCESSING_COUNT_PER_FRAME && !AsteroidCreationPool.IsEmpty()) {
 		FAsteroidData AsteroidData = AsteroidCreationPool.Pop();
 
 		if (FMath::FRand() >= AsteroidData.SegmentCurve->GetDensityValue(AsteroidData.CurrentDistanceNormalized)) {
@@ -297,6 +314,25 @@ void AAsteroidBelt::OnDensityChanged()
 void AAsteroidBelt::OnRadiusChanged()
 {
 	UE_LOGFMT(LogTemp, Display, "Radius Changed");
+}
+
+bool AAsteroidBelt::AreSegmentLinked(TArray<TPair<int, int>>& FailedResultsIndex) {
+	bool HasFailed = false;
+
+	for (int i = 0; i < SegmentsCurve.Num() - 2; i++)
+	{
+		if (!SegmentsCurve[i]->IsSegmentLinked(SegmentsCurve[i + 1])) {
+			FailedResultsIndex.Add({i, i + 1});
+			HasFailed = true;
+		}
+	}
+
+	if (!SegmentsCurve[SegmentsCurve.Num() - 1]->IsSegmentLinked(SegmentsCurve[0])) {
+		FailedResultsIndex.Add({ SegmentsCurve.Num() - 1, 0 });
+		HasFailed = true;
+	}
+
+	return !HasFailed;
 }
 
 #endif WITH_EDITOR
