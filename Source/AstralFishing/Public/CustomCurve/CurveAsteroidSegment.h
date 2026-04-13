@@ -22,9 +22,6 @@ public:
 	// Sets default values for this component's properties
 	UCurveAsteroidSegment();
 
-protected:
-	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
-
 public:
 	UFUNCTION(BlueprintCallable, Category="Math|Curves")
 	virtual float GetSizeValue(float InTime) const;

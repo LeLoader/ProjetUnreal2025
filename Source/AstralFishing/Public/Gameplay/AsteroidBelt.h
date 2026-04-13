@@ -43,10 +43,6 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
-#if WITH_EDITOR
-	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
-	virtual void PostRegisterAllComponents() override;
-#endif WITH_EDITOR
 
 #pragma region Components
 
@@ -60,7 +56,16 @@ protected:
 	UPROPERTY()
 	TMap<AAsteroid*, FAsteroidData> Asteroids;
 
+	UPROPERTY(EditAnywhere, Category = "Asteroid Belt", meta = (Units = "cm/s"))
+	float AsteroidsSpeed = 100;
+
+#pragma region Editor
+
 #if WITH_EDITOR
+
+protected:
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+	virtual void PostRegisterAllComponents() override;
 
 	UFUNCTION(CallInEditor, BlueprintCallable, Category = "Asteroid Belt")
 	void SpawnAsteroids();
@@ -102,9 +107,7 @@ private:
 
 	bool bCancelRequested = false;
 
-	// should be EPropertyChangeType::Type instead of uint32 but can seem to make it recognized by the compiler
-	UFUNCTION()
-	void OnUpdateCurve(UCurveBase* Curve, uint32 ChangeType);
+#pragma endregion Editor
 };
 
 

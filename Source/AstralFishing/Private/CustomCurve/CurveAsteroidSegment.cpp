@@ -24,12 +24,6 @@ UCurveAsteroidSegment::UCurveAsteroidSegment()
 #endif
 }
 
-void UCurveAsteroidSegment::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
-{
-	Super::PostEditChangeProperty(PropertyChangedEvent);
-
-}
-
 float UCurveAsteroidSegment::GetSizeValue(float InTime) const
 {
 	return FloatCurves[0].Eval(InTime);

@@ -27,4 +27,8 @@ private:
 	TObjectPtr<URotatingMovementComponent> RotatingComponent;
 
 #pragma endregion Components
+
+public:
+	UPROPERTY()
+	float CurrentDistance;
 };

@@ -80,19 +80,38 @@ void AAsteroidBelt::PostRegisterAllComponents() {
 
 #endif WITH_EDITOR
 
-// Called when the game starts or when spawned
 void AAsteroidBelt::BeginPlay()
 {
 	Super::BeginPlay();
 
+	TSet<AAsteroid*> AsteroidsActors;
+	Asteroids.GetKeys(AsteroidsActors);
 
+	for (AAsteroid* Asteroid : AsteroidsActors) {
+		if (IsValid(Asteroid)) {
+			Asteroid->CurrentDistance = SplineComponent->GetDistanceAlongSplineAtLocation(Asteroid->GetActorLocation(), ESplineCoordinateSpace::World);
+		}
+	}
 }
 
-// Called every frame
 void AAsteroidBelt::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	TSet<AAsteroid*> AsteroidsActors;
+	Asteroids.GetKeys(AsteroidsActors);
+
+	for (AAsteroid* Asteroid : AsteroidsActors) {
+		if (IsValid(Asteroid)) {
+			float NewDistance = FMath::Modulo(Asteroid->CurrentDistance + AsteroidsSpeed * DeltaTime, SplineComponent->GetSplineLength());
+			Asteroid->CurrentDistance = NewDistance;
+
+			FVector NewLocation = SplineComponent->GetLocationAtDistanceAlongSpline(NewDistance, ESplineCoordinateSpace::World);
+			// Asteroid->SetActorLocation(NewLocation);
+			Asteroid->GetRootComponent()->SetRelativeLocation_Direct(NewLocation);
+			Asteroid->GetRootComponent()->UpdateComponentToWorld(EUpdateTransformFlags::SkipPhysicsUpdate, ETeleportType::None);
+		}
+	}
 }
 
 #if WITH_EDITOR
@@ -260,7 +279,6 @@ void AAsteroidBelt::OnSizeChanged()
 
 	TSet<AAsteroid*> AsteroidsActors;
 	Asteroids.GetKeys(AsteroidsActors);
-	
 
 	for (AAsteroid* Asteroid : AsteroidsActors)
 	{
@@ -279,12 +297,6 @@ void AAsteroidBelt::OnDensityChanged()
 void AAsteroidBelt::OnRadiusChanged()
 {
 	UE_LOGFMT(LogTemp, Display, "Radius Changed");
-}
-
-
-void AAsteroidBelt::OnUpdateCurve(UCurveBase* Curve, uint32 ChangeType)
-{
-	UE_LOGFMT(LogTemp, Display, "Curve updated! {0} {1}", Curve->GetName(), ChangeType);
 }
 
 #endif WITH_EDITOR
