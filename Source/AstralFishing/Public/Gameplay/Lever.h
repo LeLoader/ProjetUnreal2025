@@ -109,4 +109,6 @@ private:
 
 	float DirectionValue;
 	FRotator WantedRotation;
+	bool bReachedWantedRotation = true;
+	bool bIsInteracting = false;
 };

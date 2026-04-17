@@ -48,7 +48,11 @@ void ALever::BeginPlay()
 
 void ALever::Tick(float DeltaTime)
 {
-	LeverMeshComponent->SetRelativeRotation(FMath::RInterpTo(LeverMeshComponent->GetRelativeRotation(), WantedRotation, DeltaTime, SnapSpeed));
+	if (bIsInteracting || !bReachedWantedRotation) {
+		
+		LeverMeshComponent->SetRelativeRotation(FMath::RInterpTo(LeverMeshComponent->GetRelativeRotation(), WantedRotation, DeltaTime, SnapSpeed));
+		bReachedWantedRotation = WantedRotation.Equals(LeverMeshComponent->GetRelativeRotation(), 0.1f);
+	}
 }
 
 FInteractionResult ALever::Interact(UInteractionComponent* InteractionSource)
@@ -63,6 +67,7 @@ FInteractionResult ALever::Interact(UInteractionComponent* InteractionSource)
 
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer())) {
 			Subsystem->AddMappingContext(LeverMappingContext, 1);
+			bIsInteracting = true;
 			return FInteractionResult(true, bIsToggleInteraction);
 		}
 	}
@@ -100,6 +105,7 @@ bool ALever::StopInteract(UInteractionComponent* InteractionSource)
 			Options.bIgnoreAllPressedKeysUntilRelease = true;
 			Options.bForceImmediately = false;
 			Subsystem->RemoveMappingContext(LeverMappingContext, Options);
+			bIsInteracting = false;
 			return true;
 
 		}
