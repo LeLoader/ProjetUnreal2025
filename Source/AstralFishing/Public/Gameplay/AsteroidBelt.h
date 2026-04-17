@@ -15,6 +15,7 @@ class UCurveAsteroidSegment;
 class UCurveBase;
 class AAsteroid;
 class ABait;
+class IAsteroidBeltElement;
 
 USTRUCT()
 struct FAsteroidData 
@@ -55,19 +56,33 @@ private:
 
 protected:
 	UPROPERTY()
-	TMap<AAsteroid*, FAsteroidData> Asteroids;
+	TMap<AAsteroid*, FAsteroidData> AsteroidsEditor;
 
-	UPROPERTY()
-	TArray<class ABait*> Baits;
+	UPROPERTY(VisibleAnywhere)
+	TArray<TScriptInterface<IAsteroidBeltElement>> AsteroidBeltElements;
 
 	UPROPERTY(EditAnywhere, Category = "Asteroid Belt", meta = (Units = "cm/s"))
 	float AsteroidsSpeed = 100;
 
 	UFUNCTION()
-	void MoveAsteroids(float DeltaTime);
+	void MoveElements(float DeltaTime);
 
-	UPROPERTY(EditAnywhere, Category = "Asteroid Belt|Editor")
-	TArray<TSubclassOf<AAsteroid>> BaitClasses;
+	UFUNCTION()
+	UCurveAsteroidSegment* GetAsteroidCurve(float Distance);
+
+#pragma region Baits
+
+protected:
+	UPROPERTY(EditAnywhere, Category = "Asteroid Belt|Baits")
+	TArray<class UBaitDefinition*> BaitDefinitions;
+
+	UPROPERTY(EditAnywhere, Category = "Asteroid Belt|Baits")
+	int BaitCount = 20;
+
+	UFUNCTION()
+	void SpawnInitialBaits();
+
+#pragma endregion Baits
 
 #pragma region Editor
 

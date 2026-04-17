@@ -5,9 +5,8 @@
 
 #include "GameFramework/RotatingMovementComponent.h"
 #include <Kismet/KismetMathLibrary.h>
+#include "Components/SplineComponent.h"
 
-
-// Sets default values
 AAsteroid::AAsteroid()
 {
 	PrimaryActorTick.bCanEverTick = false;
@@ -18,8 +17,21 @@ AAsteroid::AAsteroid()
 	RootComponent = MeshComponent;
 
 	RotatingComponent = CreateDefaultSubobject<URotatingMovementComponent>(TEXT("RotatingComponent"));
-	FRotator RandomRotator = UKismetMathLibrary::RandomRotator(false);
-	FRotator ScaledDownRandomRotator = FRotator(RandomRotator.Pitch / 180, RandomRotator.Yaw / 180, RandomRotator.Roll / 180);
-	RotatingComponent->RotationRate = ScaledDownRandomRotator;
+	FRotator RandomRotator;
+	RandomRotator.Yaw = FMath::FRand();
+	RandomRotator.Pitch = FMath::FRand();
+	RotatingComponent->RotationRate = RandomRotator;
+}
 
+void AAsteroid::Move(float DeltaTime, float Speed, USplineComponent* Spline)
+{
+	CurrentDistance = FMath::Modulo(CurrentDistance + Speed * DeltaTime, Spline->GetSplineLength());
+	FVector NewLocation = Spline->GetLocationAtDistanceAlongSpline(CurrentDistance, ESplineCoordinateSpace::World);
+	RootComponent->SetRelativeLocation_Direct(NewLocation);
+	RootComponent->UpdateComponentToWorld(EUpdateTransformFlags::SkipPhysicsUpdate, ETeleportType::None);
+}
+
+void AAsteroid::SetCurrentDistance(float InCurrentDistance)
+{
+	CurrentDistance = InCurrentDistance;
 }

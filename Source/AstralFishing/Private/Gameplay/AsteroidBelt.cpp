@@ -11,7 +11,9 @@
 #include "Widgets/Notifications/SNotificationList.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "UObject/UnrealType.h"
-
+#include "Gameplay/Baits/Bait.h"
+#include "Gameplay/Baits/BaitDefinition.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 AAsteroidBelt::AAsteroidBelt()
@@ -26,39 +28,79 @@ void AAsteroidBelt::BeginPlay()
 {
 	Super::BeginPlay();
 
+	AsteroidBeltElements.Empty();
 	TSet<AAsteroid*> AsteroidsActors;
-	Asteroids.GetKeys(AsteroidsActors);
-
+	AsteroidsEditor.GetKeys(AsteroidsActors);
 	for (AAsteroid* Asteroid : AsteroidsActors) {
-		if (IsValid(Asteroid)) {
-			Asteroid->CurrentDistance = SplineComponent->GetDistanceAlongSplineAtLocation(Asteroid->GetActorLocation(), ESplineCoordinateSpace::World);
-		}
+		AsteroidBeltElements.Add(Asteroid);
 	}
+	SpawnInitialBaits();
 }
 
 void AAsteroidBelt::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	MoveAsteroids(DeltaTime);
+	MoveElements(DeltaTime);
 }
 
-void AAsteroidBelt::MoveAsteroids(float DeltaTime)
+void AAsteroidBelt::MoveElements(float DeltaTime)
 {
-	TSet<AAsteroid*> AsteroidsActors;
-	Asteroids.GetKeys(AsteroidsActors);
-
-	for (AAsteroid* Asteroid : AsteroidsActors) {
-		if (LIKELY(Asteroid)) {
-			float NewDistance = FMath::Modulo(Asteroid->CurrentDistance + AsteroidsSpeed * DeltaTime, SplineComponent->GetSplineLength());
-			Asteroid->CurrentDistance = NewDistance;
-
-			FVector NewLocation = SplineComponent->GetLocationAtDistanceAlongSpline(NewDistance, ESplineCoordinateSpace::World);
-			// Asteroid->SetActorRelativeLocation(NewLocation);
-			Asteroid->GetRootComponent()->SetRelativeLocation_Direct(NewLocation);
-			Asteroid->GetRootComponent()->UpdateComponentToWorld(EUpdateTransformFlags::SkipPhysicsUpdate, ETeleportType::None);
+	for (TScriptInterface<IAsteroidBeltElement> Element : AsteroidBeltElements) {
+		if (LIKELY(Element)) {
+			Element->Move(DeltaTime, AsteroidsSpeed, SplineComponent);
 		}
 	}
+}
+
+void AAsteroidBelt::SpawnInitialBaits()
+{
+	if (BaitDefinitions.IsEmpty()) {
+		return;
+	}
+
+	float DistanceIncrement = SplineComponent->GetSplineLength() / BaitCount;
+	for (int i = 0; i < BaitCount; i++) {
+		float CurrentDistance = DistanceIncrement * i;
+		float CurrentDistanceNormalized = FMath::Modulo(CurrentDistance, SplineComponent->GetSplineLength());
+		UCurveAsteroidSegment* CurrentCurve = GetAsteroidCurve(CurrentDistance);
+
+		FTransform NextTransform;
+
+		// Location
+		FVector Origin = SplineComponent->GetLocationAtDistanceAlongSpline(CurrentDistance, ESplineCoordinateSpace::World);
+		FVector Direction = FVector(FMath::RandPointInCircle(CurrentCurve->GetRadiusValue(CurrentDistanceNormalized)), 0);
+		float Roll = SplineComponent->GetRollAtDistanceAlongSpline(CurrentDistance, ESplineCoordinateSpace::World);
+		Direction.RotateAngleAxis(Roll, FVector::UpVector);
+		Origin += Direction;
+		NextTransform.SetLocation(Origin);
+
+		// Rotation
+		FRotator RandomRotator = UKismetMathLibrary::RandomRotator(false);
+		NextTransform.SetRotation(RandomRotator.Quaternion());
+
+		int BaitDefinitionIndex = FMath::RandRange(0, BaitDefinitions.Num() - 1);
+
+		ABait* Bait = GetWorld()->SpawnActorDeferred<ABait>(ABait::StaticClass(), NextTransform, this, UGameplayStatics::GetPlayerPawn(this, 0), ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding);
+
+		FName Label = FActorSpawnUtils::MakeUniqueActorName(GetLevel(), ABait::StaticClass(), FName(BaitDefinitions[BaitDefinitionIndex]->Name.ToString()), false);
+		Bait->SetActorLabel(Label.ToString());
+		Bait->SetCurrentDistance(CurrentDistance);
+		Bait->Definition = BaitDefinitions[BaitDefinitionIndex];
+
+		Bait->FinishSpawning(NextTransform);
+		AsteroidBeltElements.Add(Bait);
+#if WITH_EDITOR
+		Bait->SetFolderPath("Baits");
+#endif WITH_EDITOR
+	}
+}
+
+UCurveAsteroidSegment* AAsteroidBelt::GetAsteroidCurve(float Distance)
+{
+	float ModulatedDistance = FMath::Modulo(Distance, SplineComponent->GetSplineLength());
+	int SegmentIndex = FMath::Floor(ModulatedDistance / SplineComponent->GetSplineLength() * SegmentsCurve.Num());
+	return SegmentsCurve[SegmentIndex];
 }
 
 #if WITH_EDITOR
@@ -182,7 +224,7 @@ void AAsteroidBelt::SpawnAsteroids()
 
 void AAsteroidBelt::DestroyAsteroids() {
 	TSet<AAsteroid*> AsteroidsActors;
-	Asteroids.GetKeys(AsteroidsActors);
+	AsteroidsEditor.GetKeys(AsteroidsActors);
 	
 	for (AAsteroid* Asteroid : AsteroidsActors)
 	{
@@ -190,7 +232,7 @@ void AAsteroidBelt::DestroyAsteroids() {
 			Asteroid->Destroy(true);
 		}
 	}
-	Asteroids.Empty();
+	AsteroidsEditor.Empty();
 }
 
 void AAsteroidBelt::CancelCurrentSpawning()
@@ -269,14 +311,25 @@ void AAsteroidBelt::ProcessAsteroidInPool()
 		}
 		NextTransform.SetScale3D(FVector::OneVector * AsteroidData.SegmentCurve->GetSizeValue(AsteroidData.CurrentDistanceNormalized));
 
+		UWorld* World = GetWorld();
+		if (IsValid(World)) {
+			FCollisionShape CollisionShape = Cast<UPrimitiveComponent>(AsteroidData.ClassToSpawn->GetDefaultObject<AActor>()->GetRootComponent())->GetCollisionShape();
+			bool bBlocking = GetWorld()->OverlapBlockingTestByChannel(NextTransform.GetLocation(), NextTransform.GetRotation(), ECC_WorldDynamic, CollisionShape);
+			if (bBlocking) {
+				failed++;
+				continue;
+			}
+		}
+
 
 		AAsteroid* Asteroid = GetWorld()->SpawnActor<AAsteroid>(AsteroidData.ClassToSpawn, NextTransform, AsteroidData.SpawnParams);
+		Asteroid->SetCurrentDistance(AsteroidData.CurrentDistance);
+		// Asteroid->GetRootComponent()->Bounds;
+		// FBoxSphereBounds::BoxesIntersect(Asteroid->GetRootComponent()->Bounds, Asteroids.Get)
 
 		if (IsValid(Asteroid)) {
-
 			Asteroid->SetFolderPath("Asteroids");
-
-			Asteroids.Add(Asteroid, AsteroidData);
+			AsteroidsEditor.Add(Asteroid, AsteroidData);
 		}
 		processed++;
 	}
@@ -295,12 +348,12 @@ void AAsteroidBelt::OnSizeChanged()
 	UE_LOGFMT(LogTemp, Display, "Size Changed");
 
 	TSet<AAsteroid*> AsteroidsActors;
-	Asteroids.GetKeys(AsteroidsActors);
+	AsteroidsEditor.GetKeys(AsteroidsActors);
 
 	for (AAsteroid* Asteroid : AsteroidsActors)
 	{
 		if (IsValid(Asteroid)) {
-			FAsteroidData* AsteroidData = Asteroids.Find(Asteroid);
+			FAsteroidData* AsteroidData = AsteroidsEditor.Find(Asteroid);
 			Asteroid->SetActorScale3D(FVector::OneVector * AsteroidData->SegmentCurve->GetSizeValue(AsteroidData->CurrentDistanceNormalized));
 		}
 	}
